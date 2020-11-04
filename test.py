@@ -7,6 +7,12 @@ import torch.nn as nn
 
 X_train, y_train = problem.get_train_data()
 X_test, y_test = problem.get_test_data()
+"""
+nn.Linear(input_size, input_size * 2),
+nn.Softmax(),
+nn.Linear(input_size * 2, output_size),
+nn.ReLU()
+"""
 
 
 class Regressor():
@@ -15,9 +21,9 @@ class Regressor():
         super().__init__()
         self.tmp = 0
         self.network = nn.Sequential(
-            nn.Linear(input_size, input_size * 2),
-            nn.Softmax(),
-            nn.Linear(input_size * 2, output_size),
+            nn.Conv1d(in_channels=1, out_channels=1, kernel_size=3),
+            nn.AvgPool1d(kernel_size=2, stride=2),
+            nn.Linear(27, 32),
             nn.ReLU()
         )
 
@@ -46,21 +52,28 @@ class Regressor():
         for training_example in X_:
             X[i] = Regressor.process_input(training_example)
             i += 1
-        X = torch.from_numpy(X).float().reshape(X_.shape[0], 56)
+        X = torch.from_numpy(X).float()
+        print("before X shape : {}".format(X.size()))
+        X = X.view(X.shape[0], 1, -1)
+        print("X shape : {}".format(X.size()))
         Y = torch.from_numpy(Y_).float()
-
+        Y = Y.view(Y.shape[0], 1, -1)
         loss_fn = torch.nn.MSELoss(reduction='sum')
 
         learning_rate = 1e-4
         opt = torch.optim.Adam(self.network.parameters(), lr=learning_rate)
-
+        last = None
         for t in range(100000):
 
             y_pred = self.network(X)
 
             loss = loss_fn(y_pred, Y)
             if t % 100 == 0:
-                print(t, loss.item())
+                if last:
+                    diff = last - loss.item()
+                    print("iter : {} -- loss : {} -- diff : {}".format(t, loss.item(), diff))
+
+                last = loss.item()
 
             opt.zero_grad()
             loss.backward()
@@ -70,7 +83,6 @@ class Regressor():
         torch.save(self.network.state_dict(), "model")
 
     def load(self):
-
         self.network.load_state_dict(torch.load("model"))
         self.network.eval()
 
@@ -87,6 +99,6 @@ z = Regressor()
 z.load()
 z.fit(X_=X_train, Y_=y_train)
 z.save()
-res = z.predict(X_test[0])
+#res = z.predict(X_test[0])
 
-print(res)
+#print(res)
