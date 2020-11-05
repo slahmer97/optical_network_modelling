@@ -21,9 +21,18 @@ class Regressor():
         super().__init__()
         self.tmp = 0
         self.network = nn.Sequential(
-            nn.Conv1d(in_channels=1, out_channels=1, kernel_size=3),
-            nn.AvgPool1d(kernel_size=2, stride=2),
-            nn.Linear(27, 32),
+            nn.Linear(input_size, 256),
+            nn.LayerNorm(normalized_shape=256),
+            nn.Conv1d(in_channels=1, out_channels=1, kernel_size=5),
+            nn.MaxPool1d(kernel_size=2),
+            nn.ReLU(),
+            nn.Conv1d(in_channels=1, out_channels=1, kernel_size=5),
+            nn.MaxPool1d(kernel_size=2),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(25, 128),
+            nn.Tanh(),
+            nn.Linear(128, 32),
             nn.ReLU()
         )
 
@@ -74,7 +83,8 @@ class Regressor():
                     print("iter : {} -- loss : {} -- diff : {}".format(t, loss.item(), diff))
 
                 last = loss.item()
-
+            if t % 10000 == 0:
+                self.save()
             opt.zero_grad()
             loss.backward()
             opt.step()
@@ -96,9 +106,8 @@ class Regressor():
 
 
 z = Regressor()
-z.load()
 z.fit(X_=X_train, Y_=y_train)
 z.save()
-#res = z.predict(X_test[0])
+# res = z.predict(X_test[0])
 
-#print(res)
+# print(res)
