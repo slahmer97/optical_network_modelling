@@ -69,13 +69,13 @@ class Regressor:
 
         self.middle_concatenate = layers.concatenate([self.hidden_left_3, self.hidden_right_2])
 
-        self.hidden_middle1 = layers.Dense(128, name="hidden_middle1", activation="relu")(self.middle_concatenate)
+        self.hidden_middle1 = layers.Dense(128, name="hidden_middle1", activation="tanh")(self.middle_concatenate)
         self.hidden_middle2 = layers.Dense(128, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
-        self.hidden_middle3 = layers.Dense(128, name="hidden_middle3", activation="tanh")(self.hidden_middle2)
-        self.hidden_middle4 = layers.Dense(128, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
-        self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="relu")(self.hidden_middle4)
+        self.hidden_middle3 = layers.Dense(128, name="hidden_middle3", activation="relu")(self.hidden_middle2)
+       # self.hidden_middle4 = layers.Dense(128, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
+      #  self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="relu")(self.hidden_middle4)
 
-        self.output_layer = layers.Dense(32, name="output_layer")(self.hidden_middle5)
+        self.output_layer = layers.Dense(32, name="output_layer")(self.hidden_middle3)
         self.model = keras.Model(
             inputs=[self.vector_input1, self.params_input1, self.params_input2,
                     self.params_input3, self.params_input4, self.params_input5,
