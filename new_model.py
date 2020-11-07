@@ -7,6 +7,7 @@ import problem
 
 class SubModel:
     def __init__(self):
+        self.batch_size = 32
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
         self.params_input1 = keras.Input(shape=(3,), name="module_params1")
@@ -64,11 +65,68 @@ class SubModel:
         # The first element of this array contains all X_train element that has one module applied
         # The second element of this array contains all X_train element that has two modules applied etc
         # Same goes with Y_train
+        X_new_train = [[], [], [], [], [], [], [], []]
+        Y_new_train = [[], [], [], [], [], [], [], []]
 
+        for i in range(0, len(X_train)):
+            example_train = X_train[i]
+            applied_modules = example_train[0]
+            p_in_30 = example_train[1]
+            if np.all(p_in_30 == 0):
+                continue
+
+            length = len(applied_modules)
+            tmp = [np.array(p_in_30)]
+            for k in range(0, 8):
+                if k < length:
+                    mod = applied_modules[k]
+                    if mod[0] == 'EDFA':
+                        mod_id = 1
+                    else:
+                        mod_id = -1
+                    param1 = mod[1][0]
+                    param2 = mod[1][1]
+                else:
+                    mod_id = 0
+                    param1 = 0
+                    param2 = 0
+                tmp.append(np.array([mod_id, param1, param2]))
+
+            X_new_train[length - 1].append(tmp)
+            Y_new_train[length - 1].append(Y_train[i])
+
+        print("len train : {}".format(len(X_train)))
+        total_len = 0
+        for i in range(0, 8):
+            total_len += len(X_new_train[i])
+        print("new len : {}".format(total_len))
         # Create X_train_batches array: first element of this array is the result of splitting of the first element
         # X_train_same_mod_size into equally size batches
         # same goes for all elements
 
+        X_Y_multiset_batches = []
+        for i in range(0, 8):
+            X_new_train_i = X_new_train[i]
+            Y_new_train_i = Y_new_train[i]
+            x_y_ith_zipped = np.array(list(zip(X_new_train_i, Y_new_train_i)))
+            np.random.shuffle(x_y_ith_zipped)
+            X_new_train_i, Y_new_train_i = zip(*x_y_ith_zipped)
+            X_new_train_i = list(X_new_train_i)
+            Y_new_train_i = list(Y_new_train_i)
+            batches_num = int(len(X_new_train_i) / self.batch_size)
+            X_training_data = np.array_split(X_new_train_i, batches_num)
+            Y_training_data = np.array_split(Y_new_train_i, batches_num)
+            X_Y_multiset_batches.append((X_training_data, Y_training_data))
+
+        for i in range(0, 8):
+            (X_mod_i_batches, Y_mod_i_batches) = X_Y_multiset_batches[i]
+            batches_num = len(X_mod_i_batches)
+            for k in range(0, batches_num):
+                X_mod_batch_i_k = X_mod_i_batches[k]
+                Y_mod_batch_i_k = Y_mod_i_batches[k]
+                print("X_mod_batch_i_k len : {}".format(len(X_mod_batch_i_k)))
+                print("Y_mod_batch_i_k len : {}".format(len(Y_mod_batch_i_k)))
+                return
         # For epoch in range(epoches_num):
         #   For X_size_batches in X_train_batches:
         #       For x_batch,y_batch in enumerate(X_size_batches) :
@@ -79,7 +137,6 @@ class SubModel:
         #           apply forward+back-propagation
         #
         #       restore saved weights, enable disactivated layers
-        pass
 
     # vector of 56 element
     def predict(self, X):
@@ -103,5 +160,11 @@ x_test = np.reshape(x_test, (-1, 784))
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
 train_dataset = train_dataset.shuffle(buffer_size=1024).batch(10)
 """
-z = a.predict([X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param])
-print(z.shape)
+# z = a.predict([X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param])
+# print(z.shape)
+
+
+X_train, y_train = problem.get_train_data()
+X_test, y_test = problem.get_test_data()
+
+a.fit(X_train, y_train)
