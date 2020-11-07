@@ -19,7 +19,7 @@ class SubModel:
         self.last_ac = None
         self.last_vac = None
         self.saved_weights = {}
-        self.batch_size = 256
+        self.batch_size = 64
         self.epochs_num = 10000
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
