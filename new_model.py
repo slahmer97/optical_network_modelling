@@ -14,6 +14,8 @@ def create_chunks(list_name, n):
 
 class SubModel:
     def __init__(self):
+        import numpy as np
+        np.random.seed(1337)
         self.last_ac = None
         self.last_vac = None
         self.saved_weights = {}
