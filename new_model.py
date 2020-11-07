@@ -16,7 +16,7 @@ class SubModel:
     def __init__(self):
         self.last_ac = None
         self.saved_weights = {}
-        self.batch_size = 128
+        self.batch_size = 256
         self.epochs_num = 10000
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
@@ -43,7 +43,7 @@ class SubModel:
                                            activation="tanh")(self.params_input5)
 
         self.params_input6 = keras.Input(shape=(3,), name="module_params6")
-        self.hidden_params5 = layers.Dense(32, name="hidden_params6",
+        self.hidden_params6 = layers.Dense(32, name="hidden_params6",
                                            activation="tanh")(self.params_input6)
 
         self.params_input7 = keras.Input(shape=(3,), name="module_params7")
@@ -54,10 +54,10 @@ class SubModel:
         self.hidden_params8 = layers.Dense(32, name="hidden_params8",
                                            activation="tanh")(self.params_input8)
 
-        self.params_concatenate = layers.concatenate([self.params_input1, self.params_input2,
-                                                      self.params_input3, self.params_input4,
-                                                      self.params_input5, self.params_input6,
-                                                      self.params_input7, self.params_input8
+        self.params_concatenate = layers.concatenate([self.hidden_params1, self.hidden_params2,
+                                                      self.hidden_params3, self.hidden_params4,
+                                                      self.hidden_params5, self.hidden_params6,
+                                                      self.hidden_params7, self.hidden_params8
                                                       ])
 
         self.hidden_right_1 = layers.Dense(64, name="hidden_right_1", activation="tanh")(self.params_concatenate)
@@ -189,7 +189,7 @@ class SubModel:
         train_acc_metric = keras.metrics.RootMeanSquaredError()
         val_acc_metric = keras.metrics.RootMeanSquaredError()
         loss_fn = keras.losses.MeanSquaredError()
-        optimizer = keras.optimizers.Adam(1e-3, decay=1e-3 / 200)
+        optimizer = keras.optimizers.Adam(1e-3)
         # Pre-trainning
 
         # Trainning
