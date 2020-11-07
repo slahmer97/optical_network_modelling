@@ -12,7 +12,7 @@ def create_chunks(list_name, n):
         yield list_name[i:i + n]
 
 
-class Regressor:
+class SubModel:
     def __init__(self):
         import numpy as np
         np.random.seed(1337)
@@ -69,13 +69,13 @@ class Regressor:
 
         self.middle_concatenate = layers.concatenate([self.hidden_left_3, self.hidden_right_2])
 
-        self.hidden_middle1 = layers.Dense(128, name="hidden_middle1", activation="tanh")(self.middle_concatenate)
+        self.hidden_middle1 = layers.Dense(128, name="hidden_middle1", activation="relu")(self.middle_concatenate)
         self.hidden_middle2 = layers.Dense(128, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
-        self.hidden_middle3 = layers.Dense(128, name="hidden_middle3", activation="relu")(self.hidden_middle2)
-        # self.hidden_middle4 = layers.Dense(128, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
-        # self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="relu")(self.hidden_middle4)
+        self.hidden_middle3 = layers.Dense(128, name="hidden_middle3", activation="tanh")(self.hidden_middle2)
+        self.hidden_middle4 = layers.Dense(128, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
+        self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="relu")(self.hidden_middle4)
 
-        self.output_layer = layers.Dense(32, name="output_layer")(self.hidden_middle3)
+        self.output_layer = layers.Dense(32, name="output_layer")(self.hidden_middle5)
         self.model = keras.Model(
             inputs=[self.vector_input1, self.params_input1, self.params_input2,
                     self.params_input3, self.params_input4, self.params_input5,
@@ -136,7 +136,7 @@ class Regressor:
                 tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
                 X_P30[length-k-2].append(tmp)
             XX.append(X_P30)
-        return self.model.predict(XX)
+        print(self.model.predict(XX))
 
     def fit(self, X_train, Y_train):
         # X_trains is splitted into an array called X_train_same_mod_size (delete all elms where R32 = np.zeros(32))
@@ -275,19 +275,19 @@ class Regressor:
 
 
 
-# a = SubModel()
-# # X30 = np.ones((1, 32), dtype=float)
-# # X_param = np.ones((1, 3), dtype=float)
-# #
-# # Y = np.ones((1, 32), dtype=float)
-# # x = [X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param]
-# # w =[x, x]
-# # with tf.GradientTape() as tape:
-# #    z = a.model(w, training=True)
+a = SubModel()
+# X30 = np.ones((1, 32), dtype=float)
+# X_param = np.ones((1, 3), dtype=float)
 #
-# # print(z.shape)
-#
-# X_train, y_train = problem.get_train_data()
-# X_test, y_test = problem.get_test_data()
-# # a.predict(X_train[:100])
+# Y = np.ones((1, 32), dtype=float)
+# x = [X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param]
+# w =[x, x]
+# with tf.GradientTape() as tape:
+#    z = a.model(w, training=True)
+
+# print(z.shape)
+
+X_train, y_train = problem.get_train_data()
+X_test, y_test = problem.get_test_data()
+a.predict(X_train[:100])
 # a.fit(X_train, y_train)
