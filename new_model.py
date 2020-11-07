@@ -7,40 +7,49 @@ import problem
 
 class SubModel:
     def __init__(self):
+        self.saved_weights = {}
         self.batch_size = 32
+        self.epochs_num = 100
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
         self.params_input1 = keras.Input(shape=(3,), name="module_params1")
-        self.general_input1 = layers.concatenate([self.vector_input1, self.params_input1])
-
+        self.hidden_params1 = layers.Dense(32, name="hidden_params1", activation="relu")(self.params_input1)
+        self.general_input1 = layers.concatenate([self.vector_input1, self.hidden_params1])
         self.hidden_layer_1_1 = layers.Dense(32, activation="tanh", name="hidden_layer_1_1")(self.general_input1)
 
         self.params_input2 = keras.Input(shape=(3,), name="module_params2")
-        self.general_input2 = layers.concatenate([self.hidden_layer_1_1, self.params_input2])
+        self.hidden_params2 = layers.Dense(32, name="hidden_params2", activation="relu")(self.params_input2)
+        self.general_input2 = layers.concatenate([self.hidden_layer_1_1, self.hidden_params2])
         self.hidden_layer_2_1 = layers.Dense(32, activation="tanh", name="hidden_layer_2_1")(self.general_input2)
 
         self.params_input3 = keras.Input(shape=(3,), name="module_params3")
-        self.general_input3 = layers.concatenate([self.hidden_layer_2_1, self.params_input3])
+        self.hidden_params3 = layers.Dense(32, name="hidden_params3", activation="relu")(self.params_input3)
+        self.general_input3 = layers.concatenate([self.hidden_layer_2_1, self.hidden_params3])
         self.hidden_layer_3_1 = layers.Dense(32, activation="tanh", name="hidden_layer_3_1")(self.general_input3)
 
         self.params_input4 = keras.Input(shape=(3,), name="module_params4")
-        self.general_input4 = layers.concatenate([self.hidden_layer_3_1, self.params_input4])
+        self.hidden_params4 = layers.Dense(32, name="hidden_params4", activation="relu")(self.params_input4)
+        self.general_input4 = layers.concatenate([self.hidden_layer_3_1, self.hidden_params4])
         self.hidden_layer_4_1 = layers.Dense(32, activation="tanh", name="hidden_layer_4_1")(self.general_input4)
 
         self.params_input5 = keras.Input(shape=(3,), name="module_params5")
-        self.general_input5 = layers.concatenate([self.hidden_layer_4_1, self.params_input5])
+        self.hidden_params5 = layers.Dense(32, name="hidden_params5", activation="relu")(self.params_input5)
+        self.general_input5 = layers.concatenate([self.hidden_layer_4_1, self.hidden_params5])
         self.hidden_layer_5_1 = layers.Dense(32, activation="tanh", name="hidden_layer_5_1")(self.general_input5)
 
         self.params_input6 = keras.Input(shape=(3,), name="module_params6")
-        self.general_input6 = layers.concatenate([self.hidden_layer_5_1, self.params_input6])
+        self.hidden_params5 = layers.Dense(32, name="hidden_params6", activation="relu")(self.params_input6)
+        self.general_input6 = layers.concatenate([self.hidden_layer_5_1, self.hidden_params5])
         self.hidden_layer_6_1 = layers.Dense(32, activation="tanh", name="hidden_layer_6_1")(self.general_input6)
 
         self.params_input7 = keras.Input(shape=(3,), name="module_params7")
-        self.general_input7 = layers.concatenate([self.hidden_layer_6_1, self.params_input7])
+        self.hidden_params7 = layers.Dense(32, name="hidden_params7", activation="relu")(self.params_input7)
+        self.general_input7 = layers.concatenate([self.hidden_layer_6_1, self.hidden_params7])
         self.hidden_layer_7_1 = layers.Dense(32, activation="tanh", name="hidden_layer_7_1")(self.general_input7)
 
         self.params_input8 = keras.Input(shape=(3,), name="module_params8")
-        self.general_input8 = layers.concatenate([self.hidden_layer_7_1, self.params_input8])
+        self.hidden_params8 = layers.Dense(32, name="hidden_params8", activation="relu")(self.params_input8)
+        self.general_input8 = layers.concatenate([self.hidden_layer_7_1, self.hidden_params8])
         self.hidden_layer_8_1 = layers.Dense(32, activation="tanh", name="hidden_layer_8_1")(self.general_input8)
 
         self.model = keras.Model(
@@ -60,6 +69,26 @@ class SubModel:
         keras.utils.plot_model(self.model, "my_model.png", show_shapes=True)
 
     # Original X_train, Y_train are passed directly here
+    def enable_layers(self):
+        for layer_name in self.saved_weights:
+            self.model.get_layer(layer_name).Trainable = True
+            self.model.get_layer(layer_name).set_weights(self.saved_weights[layer_name])
+        del self.saved_weights
+
+    def disable_layers(self, start):
+        for layer in range(start, 9):
+            print("disable from {}/8".format(layer))
+
+            # input_param_layer_name = "module_params{}".format(layer + 1)
+            hidden_param_layer_name = "hidden_params{}".format(layer)
+
+            self.model.get_layer(hidden_param_layer_name).Trainable = False
+            tmp = self.model.get_layer(hidden_param_layer_name).get_weights()
+            self.saved_weights[hidden_param_layer_name] = tmp
+            shape1 = tmp[0].shape
+            shape2 = tmp[1].shape
+            self.model.get_layer(hidden_param_layer_name).set_weights([np.zeros(shape1), np.zeros(shape2)])
+
     def fit(self, X_train, Y_train):
         # X_trains is splitted into an array called X_train_same_mod_size (delete all elms where R32 = np.zeros(32))
         # The first element of this array contains all X_train element that has one module applied
@@ -118,14 +147,21 @@ class SubModel:
             Y_training_data = np.array_split(Y_new_train_i, batches_num)
             X_Y_multiset_batches.append((X_training_data, Y_training_data))
 
-        for i in range(0, 8):
-            (X_mod_i_batches, Y_mod_i_batches) = X_Y_multiset_batches[i]
-            batches_num = len(X_mod_i_batches)
-            for k in range(0, batches_num):
-                X_mod_batch_i_k = X_mod_i_batches[k]
-                Y_mod_batch_i_k = Y_mod_i_batches[k]
-                print("X_mod_batch_i_k len : {}".format(len(X_mod_batch_i_k)))
-                print("Y_mod_batch_i_k len : {}".format(len(Y_mod_batch_i_k)))
+        for epoch in range(self.epochs_num):
+            print("[+] EPOCH({})".format(epoch))
+            for i in range(0, 8):
+                (X_mod_i_batches, Y_mod_i_batches) = X_Y_multiset_batches[i]
+                batches_num = len(X_mod_i_batches)
+
+                self.disable_layers(i + 2)
+                for k in range(0, batches_num):
+                    # X_mod_batch_i_k.shape = (self.batches_size, 9) 9-> R32*{1} + (Func+2Params)*{8}
+                    X_mod_batch_i_k = X_mod_i_batches[k]
+                    Y_mod_batch_i_k = Y_mod_i_batches[k]
+                    # print("X_mod_batch_i_k len : {}".format(X_mod_batch_i_k.shape))
+                    # print("Y_mod_batch_i_k len : {}".format(Y_mod_batch_i_k.shape))
+
+                self.enable_layers()
                 return
         # For epoch in range(epoches_num):
         #   For X_size_batches in X_train_batches:
