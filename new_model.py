@@ -59,11 +59,22 @@ class SubModel:
         keras.utils.plot_model(self.model, "my_model.png", show_shapes=True)
 
     # Original X_train, Y_train are passed directly here
-    def fit(self, X_train, Y_train):
+    def fit(self,X_train, Y_train):
         # X_trains is splitted into an array called X_train_same_mod_size (delete all elms where R32 = np.zeros(32))
         # The first element of this array contains all X_train element that has one module applied
         # The second element of this array contains all X_train element that has two modules applied etc
         # Same goes with Y_train
+        #Partie 1:
+        X_new = [[], [], [], [], [], [], [], []]
+        Y_new=  [[], [], [], [], [], [], [], []]
+        for i in range(len(X_train)):
+            for j in range(1, 9):
+                if (len(X_train[i][0]) == j):
+                    X_new[j - 1].append(X_train[i])
+                    Y_new[j-1].append(Y_train[i])
+        #Partie 2:
+        #N3ast Demain Sbah nkemelhom HHHHH
+
 
         # Create X_train_batches array: first element of this array is the result of splitting of the first element
         # X_train_same_mod_size into equally size batches
