@@ -40,6 +40,7 @@ class Regressor():
             "output_power": torch.tensor(p_out).float()} for
             (mod_seq, p_in, campaign_id), p_out in zip(X, y)]
 
+
         train_loader = torch.utils.data.DataLoader(data_list, batch_size=128,
                                                    collate_fn=collate_fn)
         # Instantiate criterion and optimizer

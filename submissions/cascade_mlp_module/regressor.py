@@ -4,12 +4,6 @@ from torch.nn.utils.rnn import pad_sequence
 
 
 class Regressor():
-    """A PyTorch MLP model consisting of an MLP for each module type.
-    The model is learnt only on single module.
-    The model takes as input the input power and the meta data of the
-    corresponding cascade. To predict the output power the model
-    simply cascades the different MLPs matching the input module cascade."""
-
     def __init__(self):
         super().__init__()
         # Since the model need meta data present in the data

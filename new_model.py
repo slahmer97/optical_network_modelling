@@ -1,3 +1,5 @@
+import time
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -5,11 +7,17 @@ import numpy as np
 import problem
 
 
+def create_chunks(list_name, n):
+    for i in range(0, len(list_name), n):
+        yield list_name[i:i + n]
+
+
 class SubModel:
     def __init__(self):
+        self.last_ac = None
         self.saved_weights = {}
         self.batch_size = 32
-        self.epochs_num = 100
+        self.epochs_num = 10000
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
         self.params_input1 = keras.Input(shape=(3,), name="module_params1")
@@ -59,12 +67,7 @@ class SubModel:
             outputs=[self.hidden_layer_8_1],
         )
 
-        self.model.compile(
-            optimizer=keras.optimizers.RMSprop(1e-3),
-            loss=[
-                keras.losses.MeanSquaredError()
-            ],
-        )
+        self.model.compile()
         self.model.summary()
         keras.utils.plot_model(self.model, "my_model.png", show_shapes=True)
 
@@ -73,11 +76,11 @@ class SubModel:
         for layer_name in self.saved_weights:
             self.model.get_layer(layer_name).Trainable = True
             self.model.get_layer(layer_name).set_weights(self.saved_weights[layer_name])
-        del self.saved_weights
+        self.saved_weights = {}
 
-    def disable_layers(self, start):
-        for layer in range(start, 9):
-            print("disable from {}/8".format(layer))
+    def disable_layers(self, start, stop=9):
+        for layer in range(start, stop):
+            # print("disable from {}/8".format(layer))
 
             # input_param_layer_name = "module_params{}".format(layer + 1)
             hidden_param_layer_name = "hidden_params{}".format(layer)
@@ -94,18 +97,29 @@ class SubModel:
         # The first element of this array contains all X_train element that has one module applied
         # The second element of this array contains all X_train element that has two modules applied etc
         # Same goes with Y_train
-        X_new_train = [[], [], [], [], [], [], [], []]
-        Y_new_train = [[], [], [], [], [], [], [], []]
+        X_P30 = [[], [], [], [], [], [], [], []]
+        MOD1 = [[], [], [], [], [], [], [], []]
+        MOD2 = [[], [], [], [], [], [], [], []]
+        MOD3 = [[], [], [], [], [], [], [], []]
+        MOD4 = [[], [], [], [], [], [], [], []]
+        MOD5 = [[], [], [], [], [], [], [], []]
+        MOD6 = [[], [], [], [], [], [], [], []]
+        MOD7 = [[], [], [], [], [], [], [], []]
+        MOD8 = [[], [], [], [], [], [], [], []]
+
+        Y_P30 = [[], [], [], [], [], [], [], []]
 
         for i in range(0, len(X_train)):
             example_train = X_train[i]
             applied_modules = example_train[0]
-            p_in_30 = example_train[1]
-            if np.all(p_in_30 == 0):
+            p_in_32 = example_train[1]
+            if np.all(p_in_32 == 0):
                 continue
 
             length = len(applied_modules)
-            tmp = [np.array(p_in_30)]
+            X_P30[length - 1].append(np.array(p_in_32).reshape((1, 32)))
+            Y_P30[length - 1].append(np.array(Y_train[i]).reshape((1, 32)))
+
             for k in range(0, 8):
                 if k < length:
                     mod = applied_modules[k]
@@ -119,62 +133,75 @@ class SubModel:
                     mod_id = 0
                     param1 = 0
                     param2 = 0
-                tmp.append(np.array([mod_id, param1, param2]))
+                tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
+                if k == 0:
+                    MOD1[length - 1].append(tmp)
+                elif k == 1:
+                    MOD2[length - 1].append(tmp)
+                elif k == 2:
+                    MOD3[length - 1].append(tmp)
+                elif k == 3:
+                    MOD4[length - 1].append(tmp)
+                elif k == 4:
+                    MOD5[length - 1].append(tmp)
+                elif k == 5:
+                    MOD6[length - 1].append(tmp)
+                elif k == 6:
+                    MOD7[length - 1].append(tmp)
+                elif k == 7:
+                    MOD8[length - 1].append(tmp)
 
-            X_new_train[length - 1].append(tmp)
-            Y_new_train[length - 1].append(Y_train[i])
-
-        print("len train : {}".format(len(X_train)))
         total_len = 0
         for i in range(0, 8):
-            total_len += len(X_new_train[i])
-        print("new len : {}".format(total_len))
-        # Create X_train_batches array: first element of this array is the result of splitting of the first element
-        # X_train_same_mod_size into equally size batches
-        # same goes for all elements
-
-        X_Y_multiset_batches = []
+            total_len += len(X_P30[i])
+        print("Total len : {}".format(total_len))
+        train_dataset_mod = []
         for i in range(0, 8):
-            X_new_train_i = X_new_train[i]
-            Y_new_train_i = Y_new_train[i]
-            x_y_ith_zipped = np.array(list(zip(X_new_train_i, Y_new_train_i)))
-            np.random.shuffle(x_y_ith_zipped)
-            X_new_train_i, Y_new_train_i = zip(*x_y_ith_zipped)
-            X_new_train_i = list(X_new_train_i)
-            Y_new_train_i = list(Y_new_train_i)
-            batches_num = int(len(X_new_train_i) / self.batch_size)
-            X_training_data = np.array_split(X_new_train_i, batches_num)
-            Y_training_data = np.array_split(Y_new_train_i, batches_num)
-            X_Y_multiset_batches.append((X_training_data, Y_training_data))
+            tmp = tf.data.Dataset.from_tensor_slices((X_P30[i], MOD1[i],
+                                                      MOD2[i], MOD3[i],
+                                                      MOD4[i], MOD5[i],
+                                                      MOD6[i], MOD7[i],
+                                                      MOD8[i], Y_P30[i]
+                                                      ))
+            tmp = tmp.shuffle(buffer_size=1024).batch(self.batch_size)
+            train_dataset_mod.append(tmp)
 
-        for epoch in range(self.epochs_num):
-            print("[+] EPOCH({})".format(epoch))
-            for i in range(0, 8):
-                (X_mod_i_batches, Y_mod_i_batches) = X_Y_multiset_batches[i]
-                batches_num = len(X_mod_i_batches)
+        train_acc_metric = keras.metrics.RootMeanSquaredError()
+        val_acc_metric = keras.metrics.RootMeanSquaredError()
+        loss_fn = keras.losses.MeanSquaredError()
+        optimizer = keras.optimizers.Adam(1e-3, decay=1e-3 / 200)
+        # Pre-trainning
 
-                self.disable_layers(i + 2)
-                for k in range(0, batches_num):
-                    # X_mod_batch_i_k.shape = (self.batches_size, 9) 9-> R32*{1} + (Func+2Params)*{8}
-                    X_mod_batch_i_k = X_mod_i_batches[k]
-                    Y_mod_batch_i_k = Y_mod_i_batches[k]
-                    # print("X_mod_batch_i_k len : {}".format(X_mod_batch_i_k.shape))
-                    # print("Y_mod_batch_i_k len : {}".format(Y_mod_batch_i_k.shape))
+        # Trainning
+        for epoch in range(0, self.epochs_num):
+            print("\nEpoch({})".format(epoch))
+            start_time = time.time()
+            for mods_num in range(0, 8):
+                train_dataset = train_dataset_mod[mods_num]
+                self.disable_layers(mods_num + 2)
+                for step, (xp30_bt, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8, yp30_bt) in enumerate(
+                        train_dataset):
+                    with tf.GradientTape() as tape:
+                        logits = self.model([xp30_bt, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8], training=True)
+
+                        loss_value = loss_fn(yp30_bt, logits)
+                    grads = tape.gradient(loss_value, self.model.trainable_weights)
+                    optimizer.apply_gradients(zip(grads, self.model.trainable_weights))
+                    train_acc_metric.update_state(yp30_bt, logits)
+                    if step % 200 == 0:
+                        print("Sample : {} -- loss : {}".format((step + 1) * self.batch_size, float(loss_value)))
 
                 self.enable_layers()
-                return
-        # For epoch in range(epoches_num):
-        #   For X_size_batches in X_train_batches:
-        #       For x_batch,y_batch in enumerate(X_size_batches) :
-        #           at this point we got a batch of data where all element have the same number of modules Z applied
-        #           disable the layers module_paramZ..8 (from Z to 8) so no weight update will be done at this point
-        #           for each layer get_weights, save_them, zero_them
-        #
-        #           apply forward+back-propagation
-        #
-        #       restore saved weights, enable disactivated layers
 
-    # vector of 56 element
+            train_acc = train_acc_metric.result()
+            if self.last_ac:
+                print("Time : {} -- Acc : {} -- Last diff : {}".format(time.time() - start_time, float(train_acc),
+                                                                       float(self.last_ac) - float(train_acc)))
+            else:
+                print("Time : {} -- Acc : {} -- Last diff : None".format(time.time() - start_time, float(train_acc)))
+            self.last_ac = float(train_acc)
+            train_acc_metric.reset_states()
+
     def predict(self, X):
         # R32 + (M1 + M1P1 + M1P2) + ... + (M8 + M8P1 + M8P2)
         return self.model.predict(X)
@@ -182,23 +209,16 @@ class SubModel:
 
 a = SubModel()
 
-arr = np.ones(32 + 3 * 8, dtype=float)
-a.model.get_layer("hidden_layer_8_1").trainable = False
-
 X30 = np.ones((1, 32), dtype=float)
 X_param = np.ones((1, 3), dtype=float)
 
 Y = np.ones((1, 32), dtype=float)
-"""
-(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
-x_train = np.reshape(x_train, (-1, 784))
-x_test = np.reshape(x_test, (-1, 784))
-train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-train_dataset = train_dataset.shuffle(buffer_size=1024).batch(10)
-"""
-# z = a.predict([X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param])
-# print(z.shape)
+# x = [X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param]
+# w =[x, x]
+# with tf.GradientTape() as tape:
+#    z = a.model(w, training=True)
 
+# print(z.shape)
 
 X_train, y_train = problem.get_train_data()
 X_test, y_test = problem.get_test_data()
