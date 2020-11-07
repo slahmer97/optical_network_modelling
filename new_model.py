@@ -23,7 +23,7 @@ class SubModel:
         self.epochs_num = 10000
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
-        self.hidden_left_0 = layers.Dense(64, name="hidden_left_0", activation="softmax")(self.vector_input1)
+        self.hidden_left_0 = layers.Dense(64, name="hidden_left_0", activation="tanh")(self.vector_input1)
         self.hidden_left_1 = layers.Dense(128, name="hidden_left_1", activation="tanh")(self.hidden_left_0)
         self.hidden_left_2 = layers.Dense(128, name="hidden_left_2", activation="tanh")(self.hidden_left_1)
         self.hidden_left_3 = layers.Dense(128, name="hidden_left_3", activation="tanh")(self.hidden_left_2)
