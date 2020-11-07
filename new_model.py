@@ -74,8 +74,8 @@ class SubModel:
         self.general_input8 = layers.concatenate([self.hidden_layer_7_0, self.hidden_params8])
         self.hidden_layer_8_0 = layers.Dense(128, activation="linear", name="hidden_layer_8_0")(self.general_input8)
         self.hidden_layer_8_1 = layers.Dense(128, activation="tanh", name="hidden_layer_8_1")(self.hidden_layer_8_0)
-        self.hidden_layer_8_2 = layers.Dense(64, activation="tanh", name="hidden_layer_8_2")(self.hidden_layer_8_1)
-        self.hidden_layer_8_3 = layers.Dense(32, activation="tanh", name="hidden_layer_8_2")(self.hidden_layer_8_2)
+        self.hidden_layer_8_2 = layers.Dense(64, activation="linear", name="hidden_layer_8_2")(self.hidden_layer_8_1)
+        self.hidden_layer_8_3 = layers.Dense(32, activation="tanh", name="hidden_layer_8_3")(self.hidden_layer_8_2)
 
         self.model = keras.Model(
             inputs=[self.vector_input1, self.params_input1, self.params_input2,
