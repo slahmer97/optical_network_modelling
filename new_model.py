@@ -193,7 +193,7 @@ class SubModel:
         train_acc_metric = keras.metrics.RootMeanSquaredError()
         val_acc_metric = keras.metrics.RootMeanSquaredError()
         loss_fn = keras.losses.MeanSquaredError()
-        optimizer = keras.optimizers.Adam(1e-3)
+        optimizer = keras.optimizers.Adam(1e-4)
         # Pre-trainning
 
         # Trainning
