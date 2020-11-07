@@ -1,10 +1,8 @@
 import time
-
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 import numpy as np
-import problem
 
 
 def create_chunks(list_name, n):
@@ -12,7 +10,7 @@ def create_chunks(list_name, n):
         yield list_name[i:i + n]
 
 
-class SubModel:
+class Regressor:
     def __init__(self):
         import numpy as np
         np.random.seed(1337)
@@ -304,24 +302,34 @@ class SubModel:
             train_acc_metric.reset_states()
             val_acc_metric.reset_states()
 
-    def predict(self, X):
-        # R32 + (M1 + M1P1 + M1P2) + ... + (M8 + M8P1 + M8P2)
-        return self.model.predict(X)
+    def predict(self,X):
+        XX=[]
+        for i in range(0, len(X)):
+            X_P30 = [[], [], [], [], [], [], [], [],[]]
+            example_train = X[i]
+            applied_modules = example_train[0]
+            p_in_32 = example_train[1]
+            if np.all(p_in_32 == 0):
+                continue
+            length = len(applied_modules)
+            X_P30[length - 1].append(np.array(p_in_32).reshape((1, 32)))
 
 
-a = SubModel()
-X30 = np.ones((1, 32), dtype=float)
-X_param = np.ones((1, 3), dtype=float)
+            for k in range(0, 8):
+                if k < length:
+                    mod = applied_modules[k]
+                    if mod[0] == 'EDFA':
+                        mod_id = 1
+                    else:
+                        mod_id = -1
+                    param1 = mod[1][0]
+                    param2 = mod[1][1]
+                else:
+                    mod_id = 0
+                    param1 = 0
+                    param2 = 0
+                tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
+                X_P30[length-k-2].append(tmp)
+            XX.append(X_P30)
+        return self.model.predict(XX)
 
-Y = np.ones((1, 32), dtype=float)
-# x = [X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param]
-# w =[x, x]
-# with tf.GradientTape() as tape:
-#    z = a.model(w, training=True)
-
-# print(z.shape)
-
-X_train, y_train = problem.get_train_data()
-X_test, y_test = problem.get_test_data()
-
-a.fit(X_train, y_train)
