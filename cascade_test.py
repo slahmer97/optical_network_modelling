@@ -44,12 +44,13 @@ class Regressor():
             (mod_seq, p_in, campaign_id), p_out in zip(X, y)]
 
 
-        train_loader = torch.utils.data.DataLoader(data_list, batch_size=128,
+        train_loader = torch.utils.data.DataLoader(data_list, batch_size=1,
                                                    collate_fn=collate_fn)
         # Instantiate criterion and optimizer
         crit = torch.nn.MSELoss()
-        opt = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
+        opt = torch.optim.Adam(self.model.parameters(), lr=0.0001)
+        params = self.model.parameters()
         # Training loop
         for e in range(100):
             for data in train_loader:

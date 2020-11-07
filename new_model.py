@@ -156,16 +156,26 @@ class SubModel:
             total_len += len(X_P30[i])
         print("Total len : {}".format(total_len))
         train_dataset_mod = []
+        validation_dataset_mod = []
         for i in range(0, 8):
-            tmp = tf.data.Dataset.from_tensor_slices((X_P30[i], MOD1[i],
-                                                      MOD2[i], MOD3[i],
-                                                      MOD4[i], MOD5[i],
-                                                      MOD6[i], MOD7[i],
-                                                      MOD8[i], Y_P30[i]
-                                                      ))
-            tmp = tmp.shuffle(buffer_size=1024).batch(self.batch_size)
-            train_dataset_mod.append(tmp)
+            val_size = int(0.2 * len(X_P30[i]))
 
+            tmp_train = tf.data.Dataset.from_tensor_slices((X_P30[i][val_size:], MOD1[i][val_size:],
+                                                            MOD2[i][val_size:], MOD3[i][val_size:],
+                                                            MOD4[i][val_size:], MOD5[i][val_size:],
+                                                            MOD6[i][val_size:], MOD7[i][val_size:],
+                                                            MOD8[i][val_size:], Y_P30[i][val_size:]
+                                                            ))
+            tmp_valid = tf.data.Dataset.from_tensor_slices((X_P30[i][:val_size], MOD1[i][:val_size],
+                                                            MOD2[i][:val_size], MOD3[i][:val_size],
+                                                            MOD4[i][:val_size], MOD5[i][:val_size],
+                                                            MOD6[i][:val_size], MOD7[i][:val_size],
+                                                            MOD8[i][:val_size], Y_P30[i][:val_size]
+                                                            ))
+            tmp_train = tmp_train.shuffle(buffer_size=1024).batch(self.batch_size)
+            tmp_valid = tmp_valid.batch(self.batch_size)
+            train_dataset_mod.append(tmp_train)
+            validation_dataset_mod.append(tmp_valid)
         train_acc_metric = keras.metrics.RootMeanSquaredError()
         val_acc_metric = keras.metrics.RootMeanSquaredError()
         loss_fn = keras.losses.MeanSquaredError()
@@ -178,9 +188,11 @@ class SubModel:
             start_time = time.time()
             for mods_num in range(0, 8):
                 train_dataset = train_dataset_mod[mods_num]
+                val_dataset = validation_dataset_mod[mods_num]
                 self.disable_layers(mods_num + 2)
                 for step, (xp30_bt, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8, yp30_bt) in enumerate(
                         train_dataset):
+
                     with tf.GradientTape() as tape:
                         logits = self.model([xp30_bt, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8], training=True)
 
@@ -191,16 +203,23 @@ class SubModel:
                     if step % 200 == 0:
                         print("Sample : {} -- loss : {}".format((step + 1) * self.batch_size, float(loss_value)))
 
-                self.enable_layers()
+                for step, (xp30_bt, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8, yp30_bt) in enumerate(
+                        val_dataset):
+                    val_logits = self.model([xp30_bt, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8], training=False)
+                    val_acc_metric.update_state(yp30_bt, val_logits)
 
+                self.enable_layers()
+            val_acc = val_acc_metric.result()
             train_acc = train_acc_metric.result()
             if self.last_ac:
-                print("Time : {} -- Acc : {} -- Last diff : {}".format(time.time() - start_time, float(train_acc),
-                                                                       float(self.last_ac) - float(train_acc)))
+                print("Time : {} -- Acc : {} -- Last diff : {} -- Val acc : {}".format(time.time() - start_time, float(train_acc),
+                                                                       float(self.last_ac) - float(train_acc), float(val_acc)))
             else:
                 print("Time : {} -- Acc : {} -- Last diff : None".format(time.time() - start_time, float(train_acc)))
             self.last_ac = float(train_acc)
             train_acc_metric.reset_states()
+            val_acc_metric.reset_states()
+
 
     def predict(self, X):
         # R32 + (M1 + M1P1 + M1P2) + ... + (M8 + M8P1 + M8P2)
