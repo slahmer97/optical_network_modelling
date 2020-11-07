@@ -96,12 +96,12 @@ X30 = np.ones((1, 32), dtype=float)
 X_param = np.ones((1, 3), dtype=float)
 
 Y = np.ones((1, 32), dtype=float)
-
+"""
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 x_train = np.reshape(x_train, (-1, 784))
 x_test = np.reshape(x_test, (-1, 784))
 train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
 train_dataset = train_dataset.shuffle(buffer_size=1024).batch(10)
-
-# z = a.predict([X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param])
-# print(z.shape)
+"""
+z = a.predict([X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param])
+print(z.shape)
