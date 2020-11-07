@@ -15,6 +15,7 @@ def create_chunks(list_name, n):
 class SubModel:
     def __init__(self):
         self.last_ac = None
+        self.last_vac = None
         self.saved_weights = {}
         self.batch_size = 32
         self.epochs_num = 10000
@@ -224,14 +225,17 @@ class SubModel:
                 self.enable_layers()
             val_acc = val_acc_metric.result()
             train_acc = train_acc_metric.result()
-            if self.last_ac:
-                print("Time : {} -- Acc : {} -- Last diff : {} -- Val acc : {}".format(time.time() - start_time,
+            if self.last_ac and self.last_vac:
+                print("Time : {} -- Acc : {} -- Last diff : {} -- Val acc : {} -- Last val dif : {}".format(time.time() - start_time,
                                                                                        float(train_acc),
                                                                                        float(self.last_ac) - float(
-                                                                                           train_acc), float(val_acc)))
+                                                                                           train_acc), float(val_acc),
+                                                                                            float(val_acc) - self.last_vac ))
             else:
                 print("Time : {} -- Acc : {} -- Last diff : None".format(time.time() - start_time, float(train_acc)))
             self.last_ac = float(train_acc)
+            self.last_vac = float(val_acc)
+
             train_acc_metric.reset_states()
             val_acc_metric.reset_states()
 
