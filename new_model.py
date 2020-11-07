@@ -70,8 +70,8 @@ class SubModel:
         self.hidden_middle1 = layers.Dense(128, name="hidden_middle1", activation="linear")(self.middle_concatenate)
         self.hidden_middle2 = layers.Dense(128, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
         self.hidden_middle3 = layers.Dense(128, name="hidden_middle3", activation="tanh")(self.hidden_middle2)
-        self.hidden_middle4 = layers.Dense(128, name="hidden_middle4", activation="tanh")(self.hidden_middle2)
-        self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="relu")(self.hidden_middle2)
+        self.hidden_middle4 = layers.Dense(128, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
+        self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="relu")(self.hidden_middle4)
 
         self.output_layer = layers.Dense(32, name="output_layer")(self.hidden_middle5)
         self.model = keras.Model(
@@ -230,7 +230,7 @@ class SubModel:
                                                                                        float(train_acc),
                                                                                        float(self.last_ac) - float(
                                                                                            train_acc), float(val_acc),
-                                                                                            float(val_acc) - self.last_vac ))
+                                                                                            self.last_vac- float(val_acc)  ))
             else:
                 print("Time : {} -- Acc : {} -- Last diff : None".format(time.time() - start_time, float(train_acc)))
             self.last_ac = float(train_acc)
