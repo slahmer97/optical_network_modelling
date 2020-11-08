@@ -18,8 +18,8 @@ class Regressor:
         self.last_vac = None
         self.saved_weights = {}
         self.batch_size = 64
-        self.epochs_num = 30
-        self.pre_epochs_num = 30
+        self.epochs_num = 1
+        self.pre_epochs_num = 0
 
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
@@ -302,6 +302,12 @@ class Regressor:
             train_acc_metric.reset_states()
             val_acc_metric.reset_states()
 
+    def simple_pred(self, X, from_):
+        self.disable_layers( from_[0])
+        pred = self.model(X)
+        self.enable_layers()
+        return pred
+
     def sub_pred(self, X):
         ret = []
         applied_modules = X[0]
@@ -322,18 +328,44 @@ class Regressor:
                 param2 = 0
             tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
             ret.append(tmp)
-        self.disable_layers(len(applied_modules))
-        pred = self.model.predict(ret)
-        self.enable_layers()
-        return pred[0]
+        return ret, len(applied_modules)+1
+
+
 
     def predict(self, X):
         # R32 + (M1 + M1P1 + M1P2) + ... + (M8 + M8P1 + M8P2)
         if len(X) == 3:
-            return self.sub_pred(X)
+            return self.model.predict(self.sub_pred(X)[0])
 
-        ret = []
+        p = []
+        mod1 = []
+        mod2 = []
+        mod3 = []
+        mod4 = []
+        mod5 = []
+        mod6 = []
+        mod7 = []
+        mod8 = []
+        dd = []
         for elm in X:
-            ret.append(self.sub_pred(elm))
-        return np.array(ret)
+            tmp,from_ = self.sub_pred(elm)
+            dd.append(from_)
+            p.append(tmp[0])
+            mod1.append(tmp[1])
+            mod2.append(tmp[2])
+            mod3.append(tmp[3])
+            mod4.append(tmp[4])
+            mod5.append(tmp[5])
+            mod6.append(tmp[6])
+            mod7.append(tmp[7])
+            mod8.append(tmp[8])
+
+        data = tf.data.Dataset.from_tensor_slices((dd, p, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8)).batch(1)
+        ret = []
+        i = 0
+        for step, (dd, p, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8) in enumerate(data):
+            ret.append(self.simple_pred([p, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8], dd.numpy()))
+            i += 1
+            print("{}".format(i))
+        return np.array(ret).reshape((len(X), 32))
 
