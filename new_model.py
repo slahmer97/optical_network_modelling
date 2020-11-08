@@ -340,15 +340,16 @@ class SubModel:
         ret = []
         for elm in X:
             ret.append(self.sub_pred(elm))
-        return np.array(ret)
+        return ret
+
 
 a = SubModel()
 
 X_train, y_train = problem.get_train_data()
 X_test, y_test = problem.get_test_data()
 
-#a.fit(X_train, y_train)
+# a.fit(X_train, y_train)
 
-v = a.predict(X_train[:10])
+v = a.predict(X_train)
 
 print(v.shape)
