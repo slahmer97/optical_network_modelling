@@ -129,7 +129,10 @@ class SubModel:
 
         x_p30_pre_training = [[], [], [], [], [], [], [], []]
         y_p30_pre_training = [[], [], [], [], [], [], [], []]
-        mod_pre_training = [[[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []]]
+        mod_pre_training = [[[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []],
+                            [[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []],
+                            [[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []],
+                            [[], [], [], [], [], [], [], []], [[], [], [], [], [], [], [], []]]
 
         for i in range(0, len(X_train)):
             example_train = X_train[i]
@@ -190,7 +193,7 @@ class SubModel:
         validation_dataset_mod = []
 
         pre_training_dataset = []
-        for i in range(1,8):
+        for i in range(1, 8):
             tmp = tf.data.Dataset.from_tensor_slices(
                 (
                     x_p30_pre_training[i], mod_pre_training[i][0],
@@ -207,12 +210,12 @@ class SubModel:
         for pre_epochs in range(0, self.pre_epochs_num):
             print("Pre epoch")
             start_time = time.time()
-            for i in range(1,8):
+            for i in range(1, 8):
                 self.disable_layers(1, 2)
-                self.disable_layers(i+1, 8)
+                self.disable_layers(i + 1, 8)
 
                 for step, (xp30_bt, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8, yp30_bt) in enumerate(
-                        pre_training_dataset[i-1]):
+                        pre_training_dataset[i - 1]):
                     with tf.GradientTape() as tape:
                         logits = self.model([xp30_bt, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8], training=True)
 
@@ -304,24 +307,48 @@ class SubModel:
             train_acc_metric.reset_states()
             val_acc_metric.reset_states()
 
+    def sub_pred(self, X):
+        ret = []
+        applied_modules = X[0]
+        p_in_32 = X[1]
+        ret.append(np.array(p_in_32).reshape((1, 32)))
+        for i in range(0, 8):
+            if i < len(applied_modules):
+                mod = applied_modules[i]
+                if mod[0] == 'EDFA':
+                    mod_id = 1
+                else:
+                    mod_id = -1
+                param1 = mod[1][0]
+                param2 = mod[1][1]
+            else:
+                mod_id = 0
+                param1 = 0
+                param2 = 0
+            tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
+            ret.append(tmp)
+        self.disable_layers(len(applied_modules))
+        pred = self.model.predict(ret)
+        self.enable_layers()
+        return pred[0]
+
     def predict(self, X):
         # R32 + (M1 + M1P1 + M1P2) + ... + (M8 + M8P1 + M8P2)
-        return self.model.predict(X)
+        if len(X) == 3:
+            return self.sub_pred(X)
 
+        ret = []
+        for elm in X:
+            ret.append(self.sub_pred(elm))
+        return np.array(ret)
 
 a = SubModel()
-X30 = np.ones((1, 32), dtype=float)
-X_param = np.ones((1, 3), dtype=float)
-
-Y = np.ones((1, 32), dtype=float)
-# x = [X30, X_param, X_param, X_param, X_param, X_param, X_param, X_param, X_param]
-# w =[x, x]
-# with tf.GradientTape() as tape:
-#    z = a.model(w, training=True)
-
-# print(z.shape)
 
 X_train, y_train = problem.get_train_data()
 X_test, y_test = problem.get_test_data()
 
-a.fit(X_train, y_train)
+#a.fit(X_train, y_train)
+
+v = a.predict(X_train[:10])
+
+print(v.shape)

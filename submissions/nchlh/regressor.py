@@ -302,34 +302,38 @@ class Regressor:
             train_acc_metric.reset_states()
             val_acc_metric.reset_states()
 
-    def predict(self,X):
-        XX=[]
-        for i in range(0, len(X)):
-            X_P30 = [[], [], [], [], [], [], [], [],[]]
-            example_train = X[i]
-            applied_modules = example_train[0]
-            p_in_32 = example_train[1]
-            if np.all(p_in_32 == 0):
-                continue
-            length = len(applied_modules)
-            X_P30[length - 1].append(np.array(p_in_32).reshape((1, 32)))
-
-
-            for k in range(0, 8):
-                if k < length:
-                    mod = applied_modules[k]
-                    if mod[0] == 'EDFA':
-                        mod_id = 1
-                    else:
-                        mod_id = -1
-                    param1 = mod[1][0]
-                    param2 = mod[1][1]
+    def sub_pred(self, X):
+        ret = []
+        applied_modules = X[0]
+        p_in_32 = X[1]
+        ret.append(np.array(p_in_32).reshape((1, 32)))
+        for i in range(0, 8):
+            if i < len(applied_modules):
+                mod = applied_modules[i]
+                if mod[0] == 'EDFA':
+                    mod_id = 1
                 else:
-                    mod_id = 0
-                    param1 = 0
-                    param2 = 0
-                tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
-                X_P30[length-k-2].append(tmp)
-            XX.append(X_P30)
-        return self.model.predict(XX)
+                    mod_id = -1
+                param1 = mod[1][0]
+                param2 = mod[1][1]
+            else:
+                mod_id = 0
+                param1 = 0
+                param2 = 0
+            tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
+            ret.append(tmp)
+        self.disable_layers(len(applied_modules))
+        pred = self.model.predict(ret)
+        self.enable_layers()
+        return pred[0]
+
+    def predict(self, X):
+        # R32 + (M1 + M1P1 + M1P2) + ... + (M8 + M8P1 + M8P2)
+        if len(X) == 3:
+            return self.sub_pred(X)
+
+        ret = []
+        for elm in X:
+            ret.append(self.sub_pred(elm))
+        return np.array(ret)
 
