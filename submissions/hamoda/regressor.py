@@ -12,7 +12,7 @@ def create_chunks(list_name, n):
         yield list_name[i:i + n]
 
 
-class Regressor:
+class SubModel:
     def __init__(self):
         import numpy as np
         np.random.seed(1337)
@@ -20,7 +20,7 @@ class Regressor:
         self.last_vac = None
         self.saved_weights = {}
         self.batch_size = 64
-        self.epochs_num = 10000
+        self.epochs_num = 100
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
         self.hidden_left_0 = layers.Dense(64, name="hidden_left_0", activation="tanh")(self.vector_input1)
@@ -107,36 +107,73 @@ class Regressor:
             shape1 = tmp[0].shape
             shape2 = tmp[1].shape
             self.model.get_layer(hidden_param_layer_name).set_weights([np.zeros(shape1), np.zeros(shape2)])
-    def predict(self,X):
-        XX=[]
-        for i in range(0, len(X)):
-            X_P30 = [[], [], [], [], [], [], [], [],[]]
-            example_train = X[i]
-            applied_modules = example_train[0]
-            p_in_32 = example_train[1]
-            if np.all(p_in_32 == 0):
-                continue
-            length = len(applied_modules)
-            X_P30[length - 1].append(np.array(p_in_32).reshape((1, 32)))
 
+    def simple_pred(self, X, from_):
+        self.disable_layers( from_[0])
+        pred = self.model(X)
+        self.enable_layers()
+        return pred
 
-            for k in range(0, 8):
-                if k < length:
-                    mod = applied_modules[k]
-                    if mod[0] == 'EDFA':
-                        mod_id = 1
-                    else:
-                        mod_id = -1
-                    param1 = mod[1][0]
-                    param2 = mod[1][1]
+    def sub_pred(self, X):
+        ret = []
+        applied_modules = X[0]
+        p_in_32 = X[1]
+        ret.append(np.array(p_in_32).reshape((1, 32)))
+        for i in range(0, 8):
+            if i < len(applied_modules):
+                mod = applied_modules[i]
+                if mod[0] == 'EDFA':
+                    mod_id = 1
                 else:
-                    mod_id = 0
-                    param1 = 0
-                    param2 = 0
-                tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
-                X_P30[length-k-2].append(tmp)
-            XX.append(X_P30)
-        return self.model.predict(XX)
+                    mod_id = -1
+                param1 = mod[1][0]
+                param2 = mod[1][1]
+            else:
+                mod_id = 0
+                param1 = 0
+                param2 = 0
+            tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
+            ret.append(tmp)
+        return ret, len(applied_modules)+1
+
+
+
+    def predict(self, X):
+        # R32 + (M1 + M1P1 + M1P2) + ... + (M8 + M8P1 + M8P2)
+        if len(X) == 3:
+            return self.model.predict(self.sub_pred(X)[0])
+
+        p = []
+        mod1 = []
+        mod2 = []
+        mod3 = []
+        mod4 = []
+        mod5 = []
+        mod6 = []
+        mod7 = []
+        mod8 = []
+        dd = []
+        for elm in X:
+            tmp,from_ = self.sub_pred(elm)
+            dd.append(from_)
+            p.append(tmp[0])
+            mod1.append(tmp[1])
+            mod2.append(tmp[2])
+            mod3.append(tmp[3])
+            mod4.append(tmp[4])
+            mod5.append(tmp[5])
+            mod6.append(tmp[6])
+            mod7.append(tmp[7])
+            mod8.append(tmp[8])
+
+        data = tf.data.Dataset.from_tensor_slices((dd, p, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8)).batch(1)
+        ret = []
+        i = 0
+        for step, (dd, p, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8) in enumerate(data):
+            ret.append(self.simple_pred([p, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8], dd.numpy()))
+            i += 1
+            print("{}".format(i))
+        return np.array(ret).reshape((len(X), 32))
 
     def fit(self, X_train, Y_train):
         # X_trains is splitted into an array called X_train_same_mod_size (delete all elms where R32 = np.zeros(32))
@@ -289,5 +326,5 @@ class Regressor:
 #
 # X_train, y_train = problem.get_train_data()
 # X_test, y_test = problem.get_test_data()
-# # a.predict(X_train[:100])
+# a.predict(X_train[0])
 # a.fit(X_train, y_train)
