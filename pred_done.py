@@ -138,14 +138,14 @@ class Regressor:
         self.hidden_middle42 = layers.Dense(128, name="hidden_middle42", activation="tanh")(self.hidden_middle41)
         self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="linear")(self.hidden_middle42)
 
-        self.output_layer = layers.Dense(32, name="output_layer")(self.hidden_middle5)
+        self.output_layer = layers.Dense(32, name="output_layer", activation="relu")(self.hidden_middle5)
         self.model = keras.Model(
             inputs=[self.vector_input1, self.params_input1, self.params_input2,
                     self.params_input3, self.params_input4, self.params_input5,
                     self.params_input6, self.params_input7, self.params_input8],
             outputs=[self.output_layer],
         )
-        opt = tf.optimizers.Adam(lr=1e-3, decay=1e-3 / 200)
+        opt = tf.optimizers.Adam(lr=0.0001)
         rms = tf.keras.metrics.RootMeanSquaredError()
         mse = tf.keras.losses.MeanSquaredError()
         self.model.compile(loss=mse, optimizer=opt, metrics=[rms])
