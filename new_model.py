@@ -1,5 +1,8 @@
 import time
 
+import sklearn
+
+import problem
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -18,15 +21,15 @@ class Regressor:
         self.last_ac = None
         self.last_vac = None
         self.saved_weights = {}
-        self.batch_size = 32
-        self.epochs_num = 30
+        self.batch_size = 1
+        self.epochs_num = 2
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
-        self.hidden_left_0 = layers.Dense(256, name="hidden_left_0", activation="tanh")(self.vector_input1)
-        self.hidden_left_0 = layers.Dense(256, name="hidden_left_1", activation="linear")(self.hidden_left_0)
-        self.hidden_left_1_1 = layers.Dense(256, name="hidden_left_1_1", activation="tanh")(self.hidden_left_0)
-        self.hidden_left_2 = layers.Dense(256, name="hidden_left_2", activation="linear")(self.hidden_left_1_1)
-        self.hidden_left_3 = layers.Dense(256, name="hidden_left_3", activation="tanh")(self.hidden_left_2)
+        self.hidden_left_0 = layers.Dense(128, name="hidden_left_0", activation="tanh")(self.vector_input1)
+        self.hidden_left_0 = layers.Dense(128, name="hidden_left_1", activation="linear")(self.hidden_left_0)
+        self.hidden_left_1_1 = layers.Dense(128, name="hidden_left_1_1", activation="tanh")(self.hidden_left_0)
+        self.hidden_left_2 = layers.Dense(128, name="hidden_left_2", activation="linear")(self.hidden_left_1_1)
+        self.hidden_left_3 = layers.Dense(128, name="hidden_left_3", activation="tanh")(self.hidden_left_2)
 
         self.params_input1 = keras.Input(shape=(3,), name="module_params1")
         self.hidden_params1 = layers.Dense(64, name="hidden_params1",
@@ -65,21 +68,20 @@ class Regressor:
                                                       ])
 
         self.hidden_right_1 = layers.Dense(128, name="hidden_right_1", activation="linear")(self.params_concatenate)
-        self.hidden_right_2 = layers.Dense(256, name="hidden_right_2", activation="tanh")(self.hidden_right_1)
+        self.hidden_right_2 = layers.Dense(128, name="hidden_right_2", activation="tanh")(self.hidden_right_1)
 
-
-        self.hidden_right_3 = layers.Dense(512, name="hidden_right_3", activation="linear")(self.hidden_right_2)
-        self.hidden_right_4 = layers.Dense(512, name="hidden_right_4", activation="tanh")(self.hidden_right_3)
-        self.hidden_right_5 = layers.Dense(512, name="hidden_right_5", activation="tanh")(self.hidden_right_4)
+        self.hidden_right_3 = layers.Dense(128, name="hidden_right_3", activation="linear")(self.hidden_right_2)
+        self.hidden_right_4 = layers.Dense(128, name="hidden_right_4", activation="tanh")(self.hidden_right_3)
+        self.hidden_right_5 = layers.Dense(128, name="hidden_right_5", activation="tanh")(self.hidden_right_4)
 
         self.middle_concatenate = layers.concatenate([self.hidden_left_3, self.hidden_right_5])
 
-        self.hidden_middle1 = layers.Dense(256, name="hidden_middle1", activation="linear")(self.middle_concatenate)
-        self.hidden_middle2 = layers.Dense(256, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
-        self.hidden_middle3 = layers.Dense(512, name="hidden_middle3", activation="relu")(self.hidden_middle2)
-        self.hidden_middle4 = layers.Dense(512, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
-        self.hidden_middle41 = layers.Dense(512, name="hidden_middle41", activation="linear")(self.hidden_middle4)
-        self.hidden_middle42 = layers.Dense(256, name="hidden_middle42", activation="tanh")(self.hidden_middle41)
+        self.hidden_middle1 = layers.Dense(128, name="hidden_middle1", activation="linear")(self.middle_concatenate)
+        self.hidden_middle2 = layers.Dense(128, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
+        self.hidden_middle3 = layers.Dense(128, name="hidden_middle3", activation="relu")(self.hidden_middle2)
+        self.hidden_middle4 = layers.Dense(128, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
+        self.hidden_middle41 = layers.Dense(128, name="hidden_middle41", activation="linear")(self.hidden_middle4)
+        self.hidden_middle42 = layers.Dense(128, name="hidden_middle42", activation="tanh")(self.hidden_middle41)
         self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="linear")(self.hidden_middle42)
 
         self.output_layer = layers.Dense(32, name="output_layer")(self.hidden_middle5)
@@ -256,7 +258,7 @@ class Regressor:
         train_dataset_mod = []
         validation_dataset_mod = []
         for i in range(0, 8):
-            val_size = int(0.001 * len(X_P30[i]))
+            val_size = int(0.0 * len(X_P30[i]))
 
             tmp_train = tf.data.Dataset.from_tensor_slices((X_P30[i][val_size:], MOD1[i][val_size:],
                                                             MOD2[i][val_size:], MOD3[i][val_size:],
@@ -323,3 +325,20 @@ class Regressor:
 
             train_acc_metric.reset_states()
             val_acc_metric.reset_states()
+
+
+a = Regressor()
+
+# print(z.shape)
+
+X_train, y_train = problem.get_train_data()
+X_test, y_test = problem.get_test_data()
+
+a.fit(X_train[:1000], y_train[:1000])
+res = a.predict(X_train[:1000]).reshape((1000, 32))
+
+mse = sklearn.metrics.mean_squared_error(res, y_train[:1000])
+
+rmse = np.sqrt(mse)
+
+print("rmse : {}".format(rmse))

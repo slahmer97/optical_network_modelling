@@ -73,7 +73,7 @@ class Regressor:
         self.hidden_middle2 = layers.Dense(128, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
         self.hidden_middle3 = layers.Dense(128, name="hidden_middle3", activation="relu")(self.hidden_middle2)
        # self.hidden_middle4 = layers.Dense(128, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
-      #  self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="relu")(self.hidden_middle4)
+       #  self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="relu")(self.hidden_middle4)
 
         self.output_layer = layers.Dense(32, name="output_layer")(self.hidden_middle3)
         self.model = keras.Model(
