@@ -40,6 +40,7 @@ class EM99(rw.score_types.BaseScoreType):
 
     def __call__(self, y_true, y_pred):
         if (y_pred < 0).any():
+            print("HERE==========================>")
             return self.worst
         ratio_err = np.array(
             [(p + self.eps) / t for y_hat, y in zip(y_pred, y_true)
