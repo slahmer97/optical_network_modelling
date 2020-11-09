@@ -190,7 +190,7 @@ class Regressor:
         )
 
     def fit(self, X_train, Y_train):
-        X_P30, MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, Y_P30 = process_data(X_train, Y_train)
+        X_P30, MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, Y_P30 = process_data(X_train)
         print("Total len : {}".format(len(X_P30)))
         try:
             self.model.fit(
@@ -206,7 +206,7 @@ class Regressor:
                     "module_params7": np.array(MOD7).reshape((len(MOD1), 3)),
                     "module_params8": np.array(MOD8).reshape((len(MOD1), 3))
                 },
-                y=np.array(Y_P30).reshape((len(Y_P30), 32)),
+                y=np.array(Y_train).reshape((len(Y_train), 32)),
                 epochs=self.epochs_num, batch_size=self.epochs_num
             )
         except Exception as inst:
