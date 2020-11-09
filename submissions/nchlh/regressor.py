@@ -13,13 +13,13 @@ def create_chunks(list_name, n):
 class Regressor:
     def __init__(self):
         import numpy as np
-        np.random.seed(1337)
+        #np.random.seed(1337)
         self.last_ac = None
-        self.last_vac = None
+        self.last_vac = 1
         self.saved_weights = {}
         self.batch_size = 64
-        self.epochs_num = 1
-        self.pre_epochs_num = 0
+        self.epochs_num = 400
+        self.pre_epochs_num = 10
 
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
@@ -85,7 +85,7 @@ class Regressor:
 
         self.model.compile()
         self.model.summary()
-        keras.utils.plot_model(self.model, "my_model.png", show_shapes=True)
+        #keras.utils.plot_model(self.model, "my_model.png", show_shapes=True)
 
     # Original X_train, Y_train are passed directly here
     def enable_layers(self):
@@ -233,7 +233,7 @@ class Regressor:
             self.last_ac = float(train_acc)
 
         for i in range(0, 8):
-            val_size = int(0.15 * len(X_P30[i]))
+            val_size = int(50.0 * len(X_P30[i]))
 
             tmp_train = tf.data.Dataset.from_tensor_slices((X_P30[i][val_size:], MOD1[i][val_size:],
                                                             MOD2[i][val_size:], MOD3[i][val_size:],
@@ -287,7 +287,7 @@ class Regressor:
                 self.enable_layers()
             val_acc = val_acc_metric.result()
             train_acc = train_acc_metric.result()
-            if self.last_ac and self.last_vac:
+            if self.last_ac :#and self.last_vac:
                 print("Time : {} -- Acc : {} -- Last diff : {} -- Val acc : {} -- Last val dif : {}".format(
                     time.time() - start_time,
                     float(train_acc),
@@ -366,6 +366,7 @@ class Regressor:
         for step, (dd, p, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8) in enumerate(data):
             ret.append(self.simple_pred([p, mod1, mod2, mod3, mod4, mod5, mod6, mod7, mod8], dd.numpy()))
             i += 1
-            print("{}".format(i))
+            if i%500 == 0:
+                print("{}".format(i))
         return np.array(ret).reshape((len(X), 32))
 
