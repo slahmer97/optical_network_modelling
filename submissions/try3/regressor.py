@@ -62,7 +62,7 @@ class Regressor:
         self.last_ac = None
         self.last_vac = None
         self.saved_weights = {}
-        self.batch_size = 64
+        self.batch_size = 256
         self.epochs_num = 100
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
@@ -117,22 +117,6 @@ class Regressor:
                 },
                 y=np.array(Y_P30).reshape((len(Y_P30), 32)),
                 epochs=self.epochs_num, batch_size=self.batch_size,
-                validation_split=0.5
             )
         except Exception as inst:
             print("exception : {}".format(inst))
-
-
-a = Regressor()
-
-X_train, y_train = problem.get_train_data()
-X_test, y_test = problem.get_test_data()
-
-a.fit(X_train, y_train)
-res = a.predict(X_train).reshape((len(X_train), 32))
-
-mse = sklearn.metrics.mean_squared_error(res, y_train)
-
-rmse = np.sqrt(mse)
-
-print("rmse : {}".format(rmse))
