@@ -70,7 +70,7 @@ def process_data(X_train, Y_train=None, shifting=False):
                 MOD8.append(tmp)
 
         if shifting:
-            for _ in range(length,8):
+            for _ in range(length, 8):
                 new_tmp.rotate(1)
                 X_P30.append(np.array(p_in_32).reshape((1, 32)))
                 Y_P30.append(np.array(Y_train[i]).reshape((1, 32)))
@@ -155,7 +155,7 @@ class Regressor:
         self.hidden_right_1 = layers.Dense(256, name="hidden_right_1", activation="tanh")(self.params_concatenate)
         self.hidden_right_2 = layers.Dense(256, name="hidden_right_2", activation="tanh")(self.hidden_right_1)
         self.hidden_right_3 = layers.Dense(256, name="hidden_right_3", activation="tanh")(self.hidden_right_2)
-        #self.hidden_right_4 = layers.Dense(128, name="hidden_right_4", activation="relu")(self.hidden_right_3)
+        # self.hidden_right_4 = layers.Dense(128, name="hidden_right_4", activation="relu")(self.hidden_right_3)
         self.hidden_right_5 = layers.Dense(256, name="hidden_right_5", activation="tanh")(self.hidden_right_3)
 
         self.middle_concatenate = layers.concatenate([self.hidden_left_3, self.hidden_right_5])
@@ -180,7 +180,7 @@ class Regressor:
         mse = tf.keras.losses.MeanSquaredError()
         self.model.compile(loss=mse, optimizer=opt, metrics=[rms])
         self.model.summary()
-        #keras.utils.plot_model(self.model, "my_model.png", show_shapes=True)
+        # keras.utils.plot_model(self.model, "my_model.png", show_shapes=True)
 
     def predict(self, X):
         X_P30, MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, _ = process_data(X)
@@ -243,4 +243,12 @@ class Regressor:
             print("exception : {}".format(inst))
 
 
+"""
+----------------------------
+Bagged scores
+----------------------------
+	score   EM99    RMSE   MEM
+	valid  0.876  0.0759  2.13
+	test   0.874  0.0731  2.48
 
+"""
