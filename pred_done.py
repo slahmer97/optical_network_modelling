@@ -1,5 +1,3 @@
-import sklearn
-
 import problem
 import tensorflow as tf
 from tensorflow import keras
@@ -14,8 +12,16 @@ def create_chunks(list_name, n):
 
 def process_data(X_train, Y_train=None, shifting=False):
     X_P30 = []
+    MOD1 = []
+    MOD2 = []
+    MOD3 = []
+    MOD4 = []
+    MOD5 = []
+    MOD6 = []
+    MOD7 = []
+    MOD8 = []
     Y_P30 = []
-    params = []
+    Num_of_mods = []
     for i in range(0, len(X_train)):
         example_train = X_train[i]
         applied_modules = example_train[0]
@@ -23,9 +29,13 @@ def process_data(X_train, Y_train=None, shifting=False):
         if np.all(p_in_32 == 0):
             continue
         length = len(applied_modules)
-
+        Num_of_mods.append(length)
         X_P30.append(np.array(p_in_32).reshape((1, 32)))
-        i_params = []
+        from collections import deque
+        if shifting:
+            Y_P30.append(np.array(Y_train[i]).reshape((1, 32)))
+            new_tmp = deque()
+
         for k in range(0, 8):
             if k < length:
                 mod = applied_modules[k]
@@ -39,20 +49,55 @@ def process_data(X_train, Y_train=None, shifting=False):
                 mod_id = 0
                 param1 = 0
                 param2 = 0
-            i_params.extend([mod_id, param1, param2])
-        params.append(i_params)
-        from collections import deque
-        if shifting:
-            Y_P30.append(np.array(Y_train[i]).reshape((1, 32)))
-            new_tmp = deque(i_params)
 
+            tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
+            if shifting:
+                new_tmp.append(tmp)
+
+            if k == 0:
+                MOD1.append(tmp)
+            elif k == 1:
+                MOD2.append(tmp)
+            elif k == 2:
+                MOD3.append(tmp)
+            elif k == 3:
+                MOD4.append(tmp)
+            elif k == 4:
+                MOD5.append(tmp)
+            elif k == 5:
+                MOD6.append(tmp)
+            elif k == 6:
+                MOD7.append(tmp)
+            elif k == 7:
+                MOD8.append(tmp)
+
+        if shifting:
             for _ in range(length, 8):
-                new_tmp.rotate(3)
+                Num_of_mods.append(length)
+                new_tmp.rotate(1)
                 X_P30.append(np.array(p_in_32).reshape((1, 32)))
                 Y_P30.append(np.array(Y_train[i]).reshape((1, 32)))
-                params.append(list(new_tmp))
 
-    return np.array(X_P30), np.array(params), np.array(Y_P30)
+                for k in range(0, 8):
+                    if k == 0:
+                        MOD1.append(new_tmp[k])
+                    elif k == 1:
+                        MOD2.append(new_tmp[k])
+                    elif k == 2:
+                        MOD3.append(new_tmp[k])
+                    elif k == 3:
+                        MOD4.append(new_tmp[k])
+                    elif k == 4:
+                        MOD5.append(new_tmp[k])
+                    elif k == 5:
+                        MOD6.append(new_tmp[k])
+                    elif k == 6:
+                        MOD7.append(new_tmp[k])
+                    elif k == 7:
+                        MOD8.append(new_tmp[k])
+    if shifting:
+        assert len(X_P30) == len(MOD1) == len(MOD2) == len(MOD3) == len(MOD4) == len(MOD5) == len(MOD6) == len(Y_P30)
+    return X_P30, MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, Y_P30, np.array(Num_of_mods).reshape((len(X_P30), 1))
 
 
 class Regressor:
@@ -72,17 +117,66 @@ class Regressor:
         self.hidden_left_2 = layers.Dense(512, name="hidden_left_2", activation="tanh")(self.hidden_left_1_1)
         self.hidden_left_3 = layers.Dense(512, name="hidden_left_3", activation="tanh")(self.hidden_left_2)
 
-        self.params_input = keras.Input(shape=(8 * 3,), name="params_input")
-        self.hidden_right_0 = layers.Dense(128, name="hidden_right_0", activation="linear")(self.params_input)
-        self.hidden_right_5 = layers.Dense(128, name="hidden_right_5", activation="linear")(self.hidden_right_0)
+        self.params_input1 = keras.Input(shape=(3,), name="module_params1")
+        # self.hidden_params1_0 = layers.Dense(6, name="hidden_params1_0", activation="tanh")(self.params_input1)
+        # self.hidden_params1 = layers.Dense(6, name="hidden_params1", activation="tanh")(self.hidden_params1_0)
 
-        self.concat = layers.concatenate([self.hidden_right_5, self.hidden_left_3])
-        self.hidden_middle_1 = layers.Dense(128, name="hidden_middle_1", activation="linear")(self.concat)
-        self.hidden_middle_5 = layers.Dense(128, name="hidden_middle_5", activation="linear")(self.hidden_middle_1)
+        self.params_input2 = keras.Input(shape=(3,), name="module_params2")
+        # self.hidden_params2_0 = layers.Dense(6, name="hidden_params2_0", activation="tanh")(self.params_input2)
+        # self.hidden_params2 = layers.Dense(6, name="hidden_params2", activation="tanh")(self.hidden_params2_0)
 
-        self.output_layer = layers.Dense(32, name="output_layer", activation="relu")(self.hidden_middle_5)
+        self.params_input3 = keras.Input(shape=(3,), name="module_params3")
+        # self.hidden_params3_0 = layers.Dense(6, name="hidden_params3_0", activation="tanh")(self.params_input3)
+        # self.hidden_params3 = layers.Dense(6, name="hidden_params3", activation="tanh")(self.hidden_params3_0)
+
+        self.params_input4 = keras.Input(shape=(3,), name="module_params4")
+        # self.hidden_params4_0 = layers.Dense(6, name="hidden_params4_0", activation="tanh")(self.params_input4)
+        # self.hidden_params4 = layers.Dense(6, name="hidden_params4", activation="tanh")(self.hidden_params4_0)
+
+        self.params_input5 = keras.Input(shape=(3,), name="module_params5")
+        # self.hidden_params5_0 = layers.Dense(6, name="hidden_params5_0", activation="tanh")(self.params_input5)
+        # self.hidden_params5 = layers.Dense(6, name="hidden_params5", activation="tanh")(self.hidden_params5_0)
+
+        self.params_input6 = keras.Input(shape=(3,), name="module_params6")
+        # self.hidden_params6_0 = layers.Dense(6, name="hidden_params6_0", activation="tanh")(self.params_input6)
+        # self.hidden_params6 = layers.Dense(6, name="hidden_params6", activation="tanh")(self.hidden_params6_0)
+
+        self.params_input7 = keras.Input(shape=(3,), name="module_params7")
+        # self.hidden_params7_0 = layers.Dense(6, name="hidden_params7_0", activation="tanh")(self.params_input7)
+        # self.hidden_params7 = layers.Dense(6, name="hidden_params7", activation="tanh")(self.hidden_params7_0)
+
+        self.params_input8 = keras.Input(shape=(3,), name="module_params8")
+        # self.hidden_params8_0 = layers.Dense(6, name="hidden_params8_0", activation="tanh")(self.params_input8)
+        # self.hidden_params8 = layers.Dense(6, name="hidden_params8", activation="tanh")(self.hidden_params8_0)
+        self.num_of_mods = keras.Input(shape=(1,), name="num_of_mods")
+
+        self.params_concatenate = layers.concatenate([self.params_input1, self.params_input2,
+                                                      self.params_input3, self.params_input4,
+                                                      self.params_input5, self.params_input6,
+                                                      self.params_input7, self.params_input8
+                                                      ])
+
+        # self.hidden_right_1 = layers.Dense(256, name="hidden_right_1", activation="linear")(self.params_concatenate)
+        self.hidden_right_2 = layers.Dense(256, name="hidden_right_2", activation="tanh")(self.params_concatenate)
+        # self.hidden_right_3 = layers.Dense(256, name="hidden_right_3", activation="tanh")(self.hidden_right_2)
+        # self.hidden_right_4 = layers.Dense(128, name="hidden_right_4", activation="tanh")(self.hidden_right_3)
+        self.hidden_right_5 = layers.Dense(512, name="hidden_right_5", activation="tanh")(self.hidden_right_2)
+
+        self.middle_concatenate = layers.concatenate([self.hidden_left_3, self.hidden_right_5, self.num_of_mods])
+
+        self.hidden_middle1 = layers.Dense(256, name="hidden_middle1", activation="tanh")(self.middle_concatenate)
+        # self.hidden_middle2 = layers.Dense(256, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
+        # self.hidden_middle3 = layers.Dense(512, name="hidden_middle3", activation="tanh")(self.hidden_middle2)
+        # self.hidden_middle4 = layers.Dense(512, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
+        # self.hidden_middle41 = layers.Dense(512, name="hidden_middle41", activation="tanh")(self.hidden_middle4)
+        self.hidden_middle42 = layers.Dense(256, name="hidden_middle42", activation="tanh")(self.hidden_middle1)
+        self.hidden_middle5 = layers.Dense(256, name="hidden_middle5", activation="tanh")(self.hidden_middle42)
+
+        self.output_layer = layers.Dense(32, name="output_layer", activation="relu")(self.hidden_middle5)
         self.model = keras.Model(
-            inputs=[self.vector_input1, self.params_input],
+            inputs=[self.vector_input1, self.params_input1, self.params_input2,
+                    self.params_input3, self.params_input4, self.params_input5,
+                    self.params_input6, self.params_input7, self.params_input8, self.num_of_mods],
             outputs=[self.output_layer],
         )
         opt = tf.optimizers.Adam(lr=0.0001)
@@ -92,30 +186,62 @@ class Regressor:
         self.model.summary()
 
     def predict(self, X):
-        X_P30, Params, _ = process_data(X)
+        X_P30, MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, _, _ = process_data(X)
 
         return self.model.predict(
             x=
             {
                 "R30_input_1": np.array(X_P30).reshape(len(X_P30), 32),
-                "params_input": np.array(Params).reshape((len(Params), 3 * 8))
+                "module_params1": np.array(MOD1).reshape((len(MOD1), 3)),
+                "module_params2": np.array(MOD2).reshape((len(MOD1), 3)),
+                "module_params3": np.array(MOD3).reshape((len(MOD1), 3)),
+                "module_params4": np.array(MOD4).reshape((len(MOD1), 3)),
+                "module_params5": np.array(MOD5).reshape((len(MOD1), 3)),
+                "module_params6": np.array(MOD6).reshape((len(MOD1), 3)),
+                "module_params7": np.array(MOD7).reshape((len(MOD1), 3)),
+                "module_params8": np.array(MOD8).reshape((len(MOD1), 3))
             }
         )
 
     def evaluate(self, X, Y):
-        pass
+        X_P30, MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, _, _ = process_data(X)
+
+        self.model.evaluate(
+            x=
+            {
+                "R30_input_1": np.array(X_P30).reshape(len(X_P30), 32),
+                "module_params1": np.array(MOD1).reshape((len(MOD1), 3)),
+                "module_params2": np.array(MOD2).reshape((len(MOD1), 3)),
+                "module_params3": np.array(MOD3).reshape((len(MOD1), 3)),
+                "module_params4": np.array(MOD4).reshape((len(MOD1), 3)),
+                "module_params5": np.array(MOD5).reshape((len(MOD1), 3)),
+                "module_params6": np.array(MOD6).reshape((len(MOD1), 3)),
+                "module_params7": np.array(MOD7).reshape((len(MOD1), 3)),
+                "module_params8": np.array(MOD8).reshape((len(MOD1), 3))
+            },
+            y=np.array(Y).reshape((len(Y), 32))
+        )
 
     def fit(self, X_train, Y_train):
-        X_P30, Params, Y_P30 = process_data(X_train, Y_train, shifting=True)
+        X_P30, MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, Y_P30, NumOfMods = process_data(X_train, Y_train,
+                                                                                               shifting=False)
         print("Total len : {}".format(len(X_P30)))
         try:
             self.model.fit(
                 x=
                 {
                     "R30_input_1": np.array(X_P30).reshape(len(X_P30), 32),
-                    "params_input": np.array(Params).reshape((len(Params), 3 * 8)),
+                    "module_params1": np.array(MOD1).reshape((len(MOD1), 3)),
+                    "module_params2": np.array(MOD2).reshape((len(MOD1), 3)),
+                    "module_params3": np.array(MOD3).reshape((len(MOD1), 3)),
+                    "module_params4": np.array(MOD4).reshape((len(MOD1), 3)),
+                    "module_params5": np.array(MOD5).reshape((len(MOD1), 3)),
+                    "module_params6": np.array(MOD6).reshape((len(MOD1), 3)),
+                    "module_params7": np.array(MOD7).reshape((len(MOD1), 3)),
+                    "module_params8": np.array(MOD8).reshape((len(MOD1), 3)),
+                    "num_of_mods": NumOfMods
                 },
-                y=np.array(Y_P30).reshape((len(Y_P30), 32)),
+                y=np.array(Y_train).reshape((len(Y_train), 32)),
                 epochs=self.epochs_num, batch_size=self.batch_size,
                 validation_split=0.5
             )
@@ -129,10 +255,10 @@ X_train, y_train = problem.get_train_data()
 X_test, y_test = problem.get_test_data()
 
 a.fit(X_train, y_train)
-res = a.predict(X_train).reshape((len(X_train), 32))
+# res = a.predict(X_train).reshape((len(X_train), 32))
 
-mse = sklearn.metrics.mean_squared_error(res, y_train)
+# mse = sklearn.metrics.mean_squared_error(res, y_train)
 
-rmse = np.sqrt(mse)
+# rmse = np.sqrt(mse)
 
-print("rmse : {}".format(rmse))
+# print("rmse : {}".format(rmse))
