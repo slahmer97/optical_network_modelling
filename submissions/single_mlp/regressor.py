@@ -1,3 +1,6 @@
+import sklearn
+
+import problem
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -71,47 +74,46 @@ class Regressor:
         self.last_vac = None
         self.saved_weights = {}
         self.batch_size = 32
-        self.epochs_num = 100
+        self.epochs_num = 25
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
-        self.hidden_left_0 = layers.Dense(128, name="hidden_left_0", activation="linear")(self.vector_input1)
-        self.hidden_left_0 = layers.Dense(512, name="hidden_left_1", activation="linear")(self.hidden_left_0)
-        self.hidden_left_1_1 = layers.Dense(512, name="hidden_left_1_1", activation="tanh")(self.hidden_left_0)
-        self.hidden_left_2 = layers.Dense(512, name="hidden_left_2", activation="tanh")(self.hidden_left_1_1)
-        self.hidden_left_3 = layers.Dense(512, name="hidden_left_3", activation="tanh")(self.hidden_left_2)
+        self.hidden_left_0 = layers.Dense(256, name="hidden_left_0", activation="linear")(self.vector_input1)
+        self.hidden_left_0 = layers.Dense(256, name="hidden_left_1", activation="tanh")(self.hidden_left_0)
+        # self.hidden_left_1_1 = layers.Dense(256, name="hidden_left_1_1", activation="linear")(self.hidden_left_0)
+        self.hidden_left_2 = layers.Dense(256, name="hidden_left_2", activation="tanh")(self.hidden_left_0)
+        self.hidden_left_3 = layers.Dense(256, name="hidden_left_3", activation="tanh")(self.hidden_left_2)
 
         self.params_input1 = keras.Input(shape=(3,), name="module_params1")
-        self.hidden_params1_0 = layers.Dense(32, name="hidden_params1_0", activation="tanh")(self.params_input1)
-        self.hidden_params1 = layers.Dense(32, name="hidden_params1", activation="relu")(self.hidden_params1_0)
-
+        # self.hidden_params1_0 = layers.Dense(64, name="hidden_params1_0", activation="tanh")(self.params_input1)
+        self.hidden_params1 = layers.Dense(64, name="hidden_params1", activation="linear")(self.params_input1)
 
         self.params_input2 = keras.Input(shape=(3,), name="module_params2")
-        self.hidden_params2_0 = layers.Dense(32, name="hidden_params2_0", activation="tanh")(self.params_input2)
-        self.hidden_params2 = layers.Dense(32, name="hidden_params2", activation="relu")(self.hidden_params2_0)
+        # self.hidden_params2_0 = layers.Dense(64, name="hidden_params2_0", activation="linear")(self.params_input2)
+        self.hidden_params2 = layers.Dense(64, name="hidden_params2", activation="linear")(self.params_input2)
 
         self.params_input3 = keras.Input(shape=(3,), name="module_params3")
-        self.hidden_params3_0 = layers.Dense(32, name="hidden_params3_0", activation="tanh")(self.params_input3)
-        self.hidden_params3 = layers.Dense(32, name="hidden_params3", activation="relu")(self.hidden_params3_0)
+        # self.hidden_params3_0 = layers.Dense(64, name="hidden_params3_0", activation="linear")(self.params_input3)
+        self.hidden_params3 = layers.Dense(64, name="hidden_params3", activation="linear")(self.params_input3)
 
         self.params_input4 = keras.Input(shape=(3,), name="module_params4")
-        self.hidden_params4_0 = layers.Dense(32, name="hidden_params4_0", activation="tanh")(self.params_input4)
-        self.hidden_params4 = layers.Dense(32, name="hidden_params4", activation="relu")(self.hidden_params4_0)
+        # self.hidden_params4_0 = layers.Dense(64, name="hidden_params4_0", activation="linear")(self.params_input4)
+        self.hidden_params4 = layers.Dense(64, name="hidden_params4", activation="linear")(self.params_input4)
 
         self.params_input5 = keras.Input(shape=(3,), name="module_params5")
-        self.hidden_params5_0 = layers.Dense(32, name="hidden_params5_0", activation="tanh")(self.params_input5)
-        self.hidden_params5 = layers.Dense(32, name="hidden_params5", activation="relu")(self.hidden_params5_0)
+        # self.hidden_params5_0 = layers.Dense(64, name="hidden_params5_0", activation="linear")(self.params_input5)
+        self.hidden_params5 = layers.Dense(64, name="hidden_params5", activation="linear")(self.params_input5)
 
         self.params_input6 = keras.Input(shape=(3,), name="module_params6")
-        self.hidden_params6_0 = layers.Dense(32, name="hidden_params6_0", activation="tanh")(self.params_input6)
-        self.hidden_params6 = layers.Dense(32, name="hidden_params6", activation="relu")(self.hidden_params6_0)
+        # self.hidden_params6_0 = layers.Dense(64, name="hidden_params6_0", activation="linear")(self.params_input6)
+        self.hidden_params6 = layers.Dense(64, name="hidden_params6", activation="linear")(self.params_input6)
 
         self.params_input7 = keras.Input(shape=(3,), name="module_params7")
-        self.hidden_params7_0 = layers.Dense(32, name="hidden_params7_0", activation="tanh")(self.params_input7)
-        self.hidden_params7 = layers.Dense(32, name="hidden_params7", activation="relu")(self.hidden_params7_0)
+        # self.hidden_params7_0 = layers.Dense(64, name="hidden_params7_0", activation="linear")(self.params_input7)
+        self.hidden_params7 = layers.Dense(64, name="hidden_params7", activation="linear")(self.params_input7)
 
         self.params_input8 = keras.Input(shape=(3,), name="module_params8")
-        self.hidden_params8_0 = layers.Dense(32, name="hidden_params8_0", activation="tanh")(self.params_input8)
-        self.hidden_params8 = layers.Dense(32, name="hidden_params8", activation="relu")(self.hidden_params8_0)
+        # self.hidden_params8_0 = layers.Dense(64, name="hidden_params8_0", activation="linear")(self.params_input8)
+        self.hidden_params8 = layers.Dense(64, name="hidden_params8", activation="linear")(self.params_input8)
 
         self.params_concatenate = layers.concatenate([self.hidden_params1, self.hidden_params2,
                                                       self.hidden_params3, self.hidden_params4,
@@ -119,22 +121,21 @@ class Regressor:
                                                       self.hidden_params7, self.hidden_params8
                                                       ])
 
-        self.hidden_right_1 = layers.Dense(128, name="hidden_right_1", activation="linear")(self.params_concatenate)
+        self.hidden_right_1 = layers.Dense(128, name="hidden_right_1", activation="tanh")(self.params_concatenate)
         self.hidden_right_2 = layers.Dense(128, name="hidden_right_2", activation="tanh")(self.hidden_right_1)
-
-        self.hidden_right_3 = layers.Dense(512, name="hidden_right_3", activation="linear")(self.hidden_right_2)
-        self.hidden_right_4 = layers.Dense(512, name="hidden_right_4", activation="tanh")(self.hidden_right_3)
-        self.hidden_right_5 = layers.Dense(512, name="hidden_right_5", activation="tanh")(self.hidden_right_4)
+        # self.hidden_right_3 = layers.Dense(128, name="hidden_right_3", activation="linear")(self.hidden_right_2)
+        # self.hidden_right_4 = layers.Dense(128, name="hidden_right_4", activation="relu")(self.hidden_right_3)
+        self.hidden_right_5 = layers.Dense(128, name="hidden_right_5", activation="tanh")(self.hidden_right_1)
 
         self.middle_concatenate = layers.concatenate([self.hidden_left_3, self.hidden_right_5])
 
-        self.hidden_middle1 = layers.Dense(256, name="hidden_middle1", activation="linear")(self.middle_concatenate)
-        self.hidden_middle2 = layers.Dense(256, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
-        self.hidden_middle3 = layers.Dense(512, name="hidden_middle3", activation="tanh")(self.hidden_middle2)
-        self.hidden_middle4 = layers.Dense(512, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
-        self.hidden_middle41 = layers.Dense(512, name="hidden_middle41", activation="linear")(self.hidden_middle4)
+        self.hidden_middle1 = layers.Dense(256, name="hidden_middle1", activation="tanh")(self.middle_concatenate)
+        # self.hidden_middle2 = layers.Dense(256, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
+        # self.hidden_middle3 = layers.Dense(512, name="hidden_middle3", activation="tanh")(self.hidden_middle2)
+        self.hidden_middle4 = layers.Dense(512, name="hidden_middle4", activation="tanh")(self.hidden_middle1)
+        self.hidden_middle41 = layers.Dense(512, name="hidden_middle41", activation="tanh")(self.hidden_middle4)
         self.hidden_middle42 = layers.Dense(256, name="hidden_middle42", activation="tanh")(self.hidden_middle41)
-        self.hidden_middle5 = layers.Dense(256, name="hidden_middle5", activation="linear")(self.hidden_middle42)
+        self.hidden_middle5 = layers.Dense(256, name="hidden_middle5", activation="tanh")(self.hidden_middle42)
 
         self.output_layer = layers.Dense(32, name="output_layer", activation="relu")(self.hidden_middle5)
         self.model = keras.Model(
@@ -206,10 +207,26 @@ class Regressor:
                 },
                 y=np.array(Y_train).reshape((len(Y_train), 32)),
                 epochs=self.epochs_num, batch_size=self.batch_size,
-                validation_split=0.05
+                #validation_split=0.5
             )
         except Exception as inst:
             print("exception : {}".format(inst))
 
 
+"""
+Epoch 50/50
+181/181 [==============================] - 1s 4ms/step - loss: 3.8317e-04 - root_mean_squared_error: 0.0196
+	score   EM99    RMSE   MEM       time
+	train  0.365  0.0318  1.64  37.181945
+	valid  0.922  0.0821  1.40   1.613353
+	test   0.954  0.0865  1.50   0.115309
+	
+	
+	181/181 [==============================] - 1s 6ms/step - loss: 4.3221e-04 - root_mean_squared_error: 0.0208
+	score   EM99    RMSE   MEM       time
+	train  0.402  0.0363  1.62  57.363351
+	valid  0.908  0.0835  1.43   2.037821
+	test   0.934  0.0860  1.55   0.136438
+CV fold 1
 
+"""
