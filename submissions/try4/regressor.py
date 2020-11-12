@@ -103,7 +103,7 @@ class Regressor:
         self.epsilon = 0.0001
         self.saved_weights = {}
         self.batch_size = 64
-        self.epochs_num = 350
+        self.epochs_num = 50
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
         self.hidden_left_0 = layers.Dense(128, name="hidden_left_0", activation="linear")(self.vector_input1)
@@ -218,7 +218,7 @@ class Regressor:
             scores[i] = 0.6 * num_of_mods + 0.4 * reg_score
         scores = scores / scores.sum()
         print("step 1 done : {}".format(scores.sum()))
-        indexes = np.random.choice(range(len(X_train)), size=10000, replace=True, p=scores)
+        indexes = np.random.choice(range(len(X_train)), size=int(len(X_train) - 0.33*len(X_train)), replace=True, p=scores)
 
         X = np.array(X_train)[indexes]
         Y = np.array(Y_train)[indexes]
@@ -241,17 +241,8 @@ class Regressor:
                     "module_params8": np.array(MOD8).reshape((len(MOD1), 3))
                 },
                 y=np.array(Y).reshape((len(Y), 32)),
-                epochs=self.epochs_num, batch_size=self.batch_size,
-                validation_split=0.5
+                epochs=self.epochs_num, batch_size=self.batch_size
             )
         except Exception as inst:
             print("exception : {}".format(inst))
 
-
-a = Regressor()
-
-import problem
-
-X_train, y_train = problem.get_train_data()
-X_test, y_test = problem.get_test_data()
-a.fit(X_train, y_train)
