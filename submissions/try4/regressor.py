@@ -45,7 +45,7 @@ def process_data(X_train, Y_train=None, shifting=False):
                 param1 = 0
                 param2 = 0
 
-            tmp = np.array([mod_id, param1, param2]).reshape((1, 3))
+            tmp = np.array([mod_id, param1 / 10.0, param2 / 10.0]).reshape((1, 3))
             if shifting:
                 new_tmp.append(tmp)
 
@@ -95,21 +95,25 @@ def process_data(X_train, Y_train=None, shifting=False):
 
 
 class Regressor:
-    def __init__(self):
-        import numpy as np
-        np.random.seed(1337)
+    def __init__(self, *args, **kwargs):
+        if len(kwargs) == 0:
+            return
+        # import numpy as np
+        id = kwargs.pop("id", None)
+        print("Launching -- {} -- ".format(id))
+        # np.random.seed(1337)
         self.last_ac = None
         self.last_vac = None
-        self.epsilon = 0.001
+        self.epsilon = 0.0001
         self.saved_weights = {}
         self.batch_size = 64
-        self.epochs_num = 450
+        self.epochs_num = 100
         self.vector_input1 = keras.Input(shape=(32,), name="R30_input_1")
 
-        #self.hidden_left_0 = layers.Dense(128, name="hidden_left_0", activation="linear")(self.vector_input1)
-        #self.hidden_left_0 = layers.Dense(512, name="hidden_left_1", activation="tanh")(self.hidden_left_0)
-        #self.hidden_left_1_1 = layers.Dense(512, name="hidden_left_1_1", activation="tanh")(self.hidden_left_0)
-        #self.hidden_left_2 = layers.Dense(512, name="hidden_left_2", activation="tanh")(self.hidden_left_1_1)
+        # self.hidden_left_0 = layers.Dense(128, name="hidden_left_0", activation="linear")(self.vector_input1)
+        # self.hidden_left_0 = layers.Dense(512, name="hidden_left_1", activation="tanh")(self.hidden_left_0)
+        # self.hidden_left_1_1 = layers.Dense(512, name="hidden_left_1_1", activation="tanh")(self.hidden_left_0)
+        # self.hidden_left_2 = layers.Dense(512, name="hidden_left_2", activation="tanh")(self.hidden_left_1_1)
         self.hidden_left_3 = layers.Dense(512, name="hidden_left_3", activation="tanh")(self.vector_input1)
 
         self.params_input1 = keras.Input(shape=(3,), name="module_params1")
@@ -154,17 +158,17 @@ class Regressor:
         # self.hidden_right_2 = layers.Dense(256, name="hidden_right_2", activation="tanh")(self.hidden_right_1)
         # self.hidden_right_3 = layers.Dense(256, name="hidden_right_3", activation="tanh")(self.hidden_right_2)
         # self.hidden_right_4 = layers.Dense(128, name="hidden_right_4", activation="tanh")(self.hidden_right_3)
-        self.hidden_right_5 = layers.Dense(512, name="hidden_right_5", activation="tanh")(self.params_concatenate)
+        self.hidden_right_5 = layers.Dense(256, name="hidden_right_5", activation="tanh")(self.params_concatenate)
 
         self.middle_concatenate = layers.concatenate([self.hidden_left_3, self.hidden_right_5])
 
-        self.hidden_middle1 = layers.Dense(128, name="hidden_middle1", activation="linear")(self.middle_concatenate)
+        self.hidden_middle1 = layers.Dense(256, name="hidden_middle1", activation="linear")(self.middle_concatenate)
         # self.hidden_middle2 = layers.Dense(256, name="hidden_middle2", activation="tanh")(self.hidden_middle1)
         # self.hidden_middle3 = layers.Dense(512, name="hidden_middle3", activation="tanh")(self.hidden_middle2)
-        # self.hidden_middle4 = layers.Dense(512, name="hidden_middle4", activation="tanh")(self.hidden_middle3)
-        # self.hidden_middle41 = layers.Dense(512, name="hidden_middle41", activation="tanh")(self.hidden_middle4)
-        self.hidden_middle42 = layers.Dense(128, name="hidden_middle42", activation="tanh")(self.hidden_middle1)
-        self.hidden_middle5 = layers.Dense(128, name="hidden_middle5", activation="tanh")(self.hidden_middle42)
+        self.hidden_middle4 = layers.Dense(256, name="hidden_middle4", activation="tanh")(self.hidden_middle1)
+        self.hidden_middle41 = layers.Dense(256, name="hidden_middle41", activation="linear")(self.hidden_middle4)
+        self.hidden_middle42 = layers.Dense(256, name="hidden_middle42", activation="tanh")(self.hidden_middle41)
+        self.hidden_middle5 = layers.Dense(256, name="hidden_middle5", activation="linear")(self.hidden_middle42)
 
         self.output_layer = layers.Dense(32, name="output_layer", activation="relu")(self.hidden_middle5)
         self.model = keras.Model(
@@ -177,9 +181,9 @@ class Regressor:
         rms = tf.keras.metrics.RootMeanSquaredError()
         mse = tf.keras.losses.MeanSquaredError()
         self.model.compile(loss=mse, optimizer=opt, metrics=[rms])
-        self.model.summary()
+        # self.model.summary()
 
-    def predict(self, X):
+    def predict2(self, X):
         X_P30, MOD1, MOD2, MOD3, MOD4, MOD5, MOD6, MOD7, MOD8, _ = process_data(X)
 
         return self.model.predict(
@@ -197,11 +201,21 @@ class Regressor:
             }
         )
 
-    def fit(self, X_train, Y_train):
-        assert len(X_train) == len(Y_train)
-        dataset = []
+    def predict(self, X):
+        res = []
+        for i in range(10):
+            res.append(self.models[i].predict2(X))
 
-        rem = 0
+        return np.mean(res, axis=0)
+
+    def fit(self, X, Y):
+        self.models = {}
+        for i in range(10):
+            self.models[i] = Regressor(id=i)
+            self.models[i].fit2(X, Y)
+
+    def fit2(self, X_train, Y_train):
+        assert len(X_train) == len(Y_train)
         scores = np.empty(len(X_train))
         for i in range(0, len(X_train)):
             p30_in = np.array(X_train[i][1])
@@ -215,10 +229,11 @@ class Regressor:
             if reg_score < self.epsilon:
                 reg_score = 0.0
             num_of_mods = len(X_train[i][0])
-            scores[i] = 0.6 * num_of_mods + 0.4 * reg_score
+            scores[i] = 0.8 * num_of_mods + 0.2 * reg_score
         scores = scores / scores.sum()
-        print("step 1 done : {}".format(scores.sum()))
-        indexes = np.random.choice(range(len(X_train)), size=int(len(X_train)*0.8), replace=True, p=scores)
+        sample_size = int(len(X_train) * 0.6)
+        print("step 1 done : {} -- sample_size = {}".format(scores.sum(), sample_size))
+        indexes = np.random.choice(range(len(X_train)), size=sample_size, replace=False, p=scores)
 
         X = np.array(X_train)[indexes]
         Y = np.array(Y_train)[indexes]
@@ -241,7 +256,7 @@ class Regressor:
                     "module_params8": np.array(MOD8).reshape((len(MOD1), 3))
                 },
                 y=np.array(Y).reshape((len(Y), 32)),
-                epochs=self.epochs_num, batch_size=self.batch_size,
+                epochs=self.epochs_num, batch_size=self.batch_size
             )
         except Exception as inst:
             print("exception : {}".format(inst))
